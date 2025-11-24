@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentsList from "@/components/admin/AppointmentsList";
 import AvailabilityManager from "@/components/admin/AvailabilityManager";
 import UserManagement from "@/components/admin/UserManagement";
+import ActivityLog from "@/components/admin/ActivityLog";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 
@@ -84,10 +85,11 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsList className="grid w-full max-w-3xl grid-cols-4">
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
 
             <TabsContent value="appointments">
@@ -100,6 +102,10 @@ const Admin = () => {
 
             <TabsContent value="users">
               <UserManagement />
+            </TabsContent>
+
+            <TabsContent value="activity">
+              <ActivityLog />
             </TabsContent>
           </Tabs>
         </div>
