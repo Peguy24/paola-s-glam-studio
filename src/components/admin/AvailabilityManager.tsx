@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, Plus, Trash2, Pencil } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, Pencil, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,10 @@ const AvailabilityManager = () => {
     date: "",
     start_time: "",
     end_time: "",
+  });
+  const [duplicatingSlot, setDuplicatingSlot] = useState<Slot | null>(null);
+  const [duplicateForm, setDuplicateForm] = useState({
+    date: "",
   });
   const { toast } = useToast();
 
@@ -186,6 +190,54 @@ const AvailabilityManager = () => {
     fetchSlots();
   };
 
+  const openDuplicateDialog = (slot: Slot) => {
+    setDuplicatingSlot(slot);
+    setDuplicateForm({
+      date: "",
+    });
+  };
+
+  const duplicateSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!duplicatingSlot) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("availability_slots").insert({
+      date: duplicateForm.date,
+      start_time: duplicatingSlot.start_time,
+      end_time: duplicatingSlot.end_time,
+      created_by: user.id,
+      is_available: true,
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Slot duplicated successfully",
+    });
+
+    setDuplicatingSlot(null);
+    fetchSlots();
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-2">
@@ -284,6 +336,13 @@ const AvailabilityManager = () => {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => openDuplicateDialog(slot)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => openEditDialog(slot)}
                     >
                       <Pencil className="h-4 w-4" />
@@ -372,6 +431,48 @@ const AvailabilityManager = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!duplicatingSlot} onOpenChange={() => setDuplicatingSlot(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate Availability Slot</DialogTitle>
+            <DialogDescription>
+              Create a new slot with the same time for a different date
+            </DialogDescription>
+          </DialogHeader>
+          {duplicatingSlot && (
+            <form onSubmit={duplicateSlot} className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <p className="text-sm font-medium">Original Slot:</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4" />
+                  {duplicatingSlot.start_time.slice(0, 5)} - {duplicatingSlot.end_time.slice(0, 5)}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duplicate_date">New Date</Label>
+                <Input
+                  id="duplicate_date"
+                  type="date"
+                  value={duplicateForm.date}
+                  onChange={(e) => setDuplicateForm({ ...duplicateForm, date: e.target.value })}
+                  min={format(new Date(), "yyyy-MM-dd")}
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1">
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate Slot
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setDuplicatingSlot(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
