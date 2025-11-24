@@ -185,10 +185,29 @@ const BookingCalendar = () => {
       return;
     }
 
-    if (!user) {
+    // Cooldown period: Check if user recently cancelled an appointment
+    const fifteenMinutesAgo = new Date();
+    fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15);
+
+    const { data: recentCancellations, error: cooldownError } = await supabase
+      .from("appointments")
+      .select("updated_at, status")
+      .eq("client_id", user.id)
+      .eq("status", "cancelled")
+      .gte("updated_at", fifteenMinutesAgo.toISOString())
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (cooldownError) {
+      console.error("Cooldown check error:", cooldownError);
+    } else if (recentCancellations && recentCancellations.length > 0) {
+      const lastCancellation = new Date(recentCancellations[0].updated_at);
+      const cooldownEnds = new Date(lastCancellation.getTime() + 15 * 60 * 1000);
+      const minutesRemaining = Math.ceil((cooldownEnds.getTime() - Date.now()) / (60 * 1000));
+      
       toast({
-        title: "Authentication required",
-        description: "Please sign in to book an appointment",
+        title: "Cooldown period active",
+        description: `You recently cancelled an appointment. Please wait ${minutesRemaining} more ${minutesRemaining === 1 ? 'minute' : 'minutes'} before booking again.`,
         variant: "destructive",
       });
       setLoading(false);
