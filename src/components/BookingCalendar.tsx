@@ -246,18 +246,18 @@ const BookingCalendar = () => {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>Select Date</CardTitle>
-          <CardDescription>Choose your preferred date</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Select Date</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Choose your preferred date</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex justify-center">
           <Calendar
             mode="single"
             selected={date}
             onSelect={setDate}
-            className="rounded-md border"
+            className="rounded-md border w-full max-w-full"
             disabled={(date) => date < new Date()}
           />
         </CardContent>
@@ -265,22 +265,22 @@ const BookingCalendar = () => {
 
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>Booking Details</CardTitle>
-          <CardDescription>Complete your appointment booking</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Booking Details</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Complete your appointment booking</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Service</Label>
+            <Label className="text-sm sm:text-base">Service</Label>
             <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm sm:text-base">
                 <SelectValue placeholder="Select a service" />
               </SelectTrigger>
               <SelectContent>
                 {services.map((service) => (
-                  <SelectItem key={service.id} value={service.id}>
-                    <div className="flex justify-between items-center w-full">
-                      <span>{service.name}</span>
-                      <span className="ml-4 text-muted-foreground">${service.price.toFixed(2)}</span>
+                  <SelectItem key={service.id} value={service.id} className="text-sm sm:text-base">
+                    <div className="flex justify-between items-center w-full gap-2">
+                      <span className="truncate">{service.name}</span>
+                      <span className="text-muted-foreground whitespace-nowrap">${service.price.toFixed(2)}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -290,11 +290,11 @@ const BookingCalendar = () => {
 
           {date && (
             <div className="space-y-2">
-              <Label>Available Times</Label>
+              <Label className="text-sm sm:text-base">Available Times</Label>
               {availableSlots.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No slots available for this date</p>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
                   {availableSlots.map((slot) => {
                     const remaining = slot.capacity - (slot.bookings_count || 0);
                     return (
@@ -302,11 +302,11 @@ const BookingCalendar = () => {
                         key={slot.id}
                         variant={selectedSlot === slot.id ? "default" : "outline"}
                         onClick={() => setSelectedSlot(slot.id)}
-                        className="justify-start flex-col items-start h-auto py-2"
+                        className="justify-start flex-col items-start h-auto py-2 px-3"
                       >
                         <div className="flex items-center w-full">
-                          <Clock className="mr-2 h-4 w-4" />
-                          {slot.start_time.slice(0, 5)}
+                          <Clock className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                          <span className="text-sm sm:text-base">{slot.start_time.slice(0, 5)}</span>
                         </div>
                         <span className="text-xs text-muted-foreground mt-1">
                           {remaining} {remaining === 1 ? 'spot' : 'spots'} left
@@ -320,7 +320,7 @@ const BookingCalendar = () => {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor="notes" className="text-sm sm:text-base">Notes (Optional)</Label>
             <Textarea
               id="notes"
               placeholder="Any special requests or information..."
@@ -328,6 +328,7 @@ const BookingCalendar = () => {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               maxLength={500}
+              className="text-sm sm:text-base resize-none"
             />
             <p className="text-xs text-muted-foreground">
               {notes.length}/500 characters
@@ -337,7 +338,7 @@ const BookingCalendar = () => {
           <Button
             onClick={handleBooking}
             disabled={loading || !selectedSlot || !selectedServiceId}
-            className="w-full"
+            className="w-full text-sm sm:text-base py-2 sm:py-3"
           >
             {loading ? "Booking..." : "Book Appointment"}
           </Button>
