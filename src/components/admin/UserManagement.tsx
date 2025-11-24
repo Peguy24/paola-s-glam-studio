@@ -153,17 +153,17 @@ const UserManagement = () => {
   });
 
   return (
-    <Card className="border-2">
+    <Card className="border-2 max-w-full overflow-hidden">
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5" />
               User Management
             </CardTitle>
-            <CardDescription>Manage user accounts and permissions</CardDescription>
+            <CardDescription className="text-sm">Manage user accounts and permissions</CardDescription>
           </div>
-          <Button onClick={downloadCSV} variant="outline" size="sm">
+          <Button onClick={downloadCSV} variant="outline" size="sm" className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -174,56 +174,56 @@ const UserManagement = () => {
             placeholder="Search by name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 text-sm"
           />
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8">Loading users...</div>
+          <div className="text-center py-8 text-sm">Loading users...</div>
         ) : filteredUsers.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             {searchTerm ? "No users match your search" : "No users found"}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredUsers.map((user) => {
               const userIsAdmin = isAdmin(user);
               
               return (
                 <div
                   key={user.id}
-                  className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border rounded-lg"
+                  className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg"
                 >
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-semibold text-lg">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-base sm:text-lg break-words">
                         {user.full_name || "No name"}
                       </h3>
                       {userIsAdmin && (
-                        <Badge variant="default" className="flex items-center gap-1">
+                        <Badge variant="default" className="flex items-center gap-1 text-xs">
                           <Shield className="h-3 w-3" />
                           Admin
                         </Badge>
                       )}
                       {!userIsAdmin && (
-                        <Badge variant="secondary">Client</Badge>
+                        <Badge variant="secondary" className="text-xs">Client</Badge>
                       )}
                     </div>
                     
-                    <div className="space-y-1 text-sm text-muted-foreground">
+                    <div className="space-y-1 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <Mail className="h-3 w-3" />
-                        {user.email}
+                        <Mail className="h-3 w-3 flex-shrink-0" />
+                        <span className="break-all">{user.email}</span>
                       </div>
                       {user.phone && (
                         <div className="flex items-center gap-2">
-                          📱 {user.phone}
+                          📱 <span className="break-words">{user.phone}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-3 w-3" />
-                        Joined {format(new Date(user.created_at), "MMM d, yyyy")}
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span>Joined {format(new Date(user.created_at), "MMM d, yyyy")}</span>
                       </div>
                     </div>
                   </div>
@@ -233,16 +233,16 @@ const UserManagement = () => {
                       variant={userIsAdmin ? "destructive" : "default"}
                       size="sm"
                       onClick={() => toggleAdminRole(user.id, userIsAdmin)}
-                      className="w-full md:w-auto"
+                      className="w-full text-xs sm:text-sm"
                     >
                       {userIsAdmin ? (
                         <>
-                          <ShieldOff className="mr-2 h-4 w-4" />
+                          <ShieldOff className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           Remove Admin
                         </>
                       ) : (
                         <>
-                          <Shield className="mr-2 h-4 w-4" />
+                          <Shield className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           Make Admin
                         </>
                       )}

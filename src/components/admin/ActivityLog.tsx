@@ -128,54 +128,54 @@ const ActivityLog = () => {
   };
 
   return (
-    <Card className="border-2">
+    <Card className="border-2 max-w-full overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <ClipboardList className="h-4 w-4 sm:h-5 sm:w-5" />
           Activity Log
         </CardTitle>
-        <CardDescription>Recent admin actions and system events</CardDescription>
+        <CardDescription className="text-sm">Recent admin actions and system events</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8">Loading activity log...</div>
+          <div className="text-center py-8 text-sm">Loading activity log...</div>
         ) : logs.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             No activity recorded yet
           </div>
         ) : (
-          <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-3">
+          <ScrollArea className="h-[600px] pr-2 sm:pr-4">
+            <div className="space-y-2 sm:space-y-3">
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex gap-4 p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                 >
                   <div className="flex-shrink-0 mt-1">
                     {getActionIcon(log.action_type)}
                   </div>
                   
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant={getActionBadgeVariant(log.action_type)}>
+                          <Badge variant={getActionBadgeVariant(log.action_type)} className="text-xs">
                             {formatActionType(log.action_type)}
                           </Badge>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {format(new Date(log.created_at), "MMM d, yyyy 'at' h:mm a")}
                           </span>
                         </div>
                         
-                        <p className="text-sm font-medium">
+                        <p className="text-xs sm:text-sm font-medium break-words">
                           {log.action_description}
                         </p>
                         
                         <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                           {log.profiles && (
                             <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span>
+                              <User className="h-3 w-3 flex-shrink-0" />
+                              <span className="break-words">
                                 By: {log.profiles.full_name || log.profiles.email}
                               </span>
                             </div>
@@ -183,8 +183,8 @@ const ActivityLog = () => {
                           
                           {log.target_profiles && (
                             <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span>
+                              <User className="h-3 w-3 flex-shrink-0" />
+                              <span className="break-words">
                                 Target: {log.target_profiles.full_name || log.target_profiles.email}
                               </span>
                             </div>
@@ -194,7 +194,7 @@ const ActivityLog = () => {
                     </div>
                     
                     {log.metadata && Object.keys(log.metadata).length > 0 && (
-                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded break-words">
                         {Object.entries(log.metadata).map(([key, value]) => (
                           <div key={key}>
                             <span className="font-medium">{key}:</span> {String(value)}
