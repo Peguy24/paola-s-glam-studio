@@ -9,6 +9,7 @@ import UserManagement from "@/components/admin/UserManagement";
 import ActivityLog from "@/components/admin/ActivityLog";
 import NotificationHistory from "@/components/admin/NotificationHistory";
 import { ServiceManagement } from "@/components/admin/ServiceManagement";
+import { ServiceAnalytics } from "@/components/admin/ServiceAnalytics";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 
@@ -87,10 +88,11 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full max-w-5xl grid-cols-6">
+            <TabsList className="grid w-full max-w-6xl grid-cols-7">
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -106,6 +108,10 @@ const Admin = () => {
 
             <TabsContent value="services">
               <ServiceManagement />
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <ServiceAnalytics />
             </TabsContent>
 
             <TabsContent value="users">
