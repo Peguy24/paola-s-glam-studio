@@ -182,10 +182,10 @@ const Services = () => {
       <div className="pt-32 pb-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               Our Services
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
               Premium beauty treatments tailored to enhance your natural beauty
             </p>
           </div>
@@ -195,32 +195,32 @@ const Services = () => {
               <p className="text-muted-foreground">No services available at the moment.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {Object.entries(groupedServices).map(([category, categoryServices]) => (
                 <Card key={category} className="border-2 hover:border-primary/50 hover:shadow-[var(--shadow-elegant)] transition-all">
                   <CardHeader>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl text-primary-foreground">
-                        {categoryIcons[category] || <Sparkles className="h-8 w-8" />}
+                      <div className="p-2 sm:p-3 bg-gradient-to-br from-primary to-secondary rounded-xl text-primary-foreground">
+                        {categoryIcons[category] || <Sparkles className="h-6 w-6 sm:h-8 sm:w-8" />}
                       </div>
-                      <CardTitle className="text-2xl">{category}</CardTitle>
+                      <CardTitle className="text-xl sm:text-2xl">{category}</CardTitle>
                     </div>
-                    <CardDescription>Professional treatments with premium products</CardDescription>
+                    <CardDescription className="text-sm sm:text-base">Professional treatments with premium products</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-3">
                       {categoryServices.map((service) => (
-                        <li key={service.id} className="flex justify-between items-center p-3 rounded-lg hover:bg-muted transition-colors group">
+                        <li key={service.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors group">
                           <div className="flex-1">
-                            <span className="font-medium">{service.name}</span>
+                            <span className="font-medium text-sm sm:text-base">{service.name}</span>
                             {service.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{service.description}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-primary font-semibold">${service.price.toFixed(2)}</span>
+                          <div className="flex items-center gap-2 justify-between sm:justify-end">
+                            <span className="text-primary font-semibold text-sm sm:text-base">${service.price.toFixed(2)}</span>
                             {isAdmin && (
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -249,14 +249,14 @@ const Services = () => {
             </div>
           )}
 
-          <div className="mt-12 p-8 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-2xl text-center border border-border">
-            <h3 className="text-2xl font-bold mb-3">Book Your Service Today</h3>
-            <p className="text-muted-foreground mb-6">
+          <div className="mt-12 p-6 sm:p-8 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-2xl text-center border border-border">
+            <h3 className="text-xl sm:text-2xl font-bold mb-3">Book Your Service Today</h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6">
               Visit our appointments page to schedule your beauty session
             </p>
             <a
               href="/appointments"
-              className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all"
             >
               Book Appointment
             </a>

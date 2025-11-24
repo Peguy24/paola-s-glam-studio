@@ -23,7 +23,7 @@ const Home = () => {
                 Premium Beauty Experience
               </div>
               
-              <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   Unleash Your
                 </span>
@@ -31,19 +31,19 @@ const Home = () => {
                 <span className="text-foreground">Inner Glamour</span>
               </h1>
               
-              <p className="text-xl text-muted-foreground max-w-xl">
+              <p className="text-lg sm:text-xl text-muted-foreground max-w-xl">
                 Experience luxury beauty services from hair styling to nail artistry, all in one stunning destination.
               </p>
               
-              <div className="flex flex-wrap gap-4">
-                <Link to="/appointments">
-                  <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)] text-lg px-8">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+                <Link to="/appointments" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)] text-base sm:text-lg px-6 sm:px-8">
                     <Calendar className="mr-2 h-5 w-5" />
                     Book Now
                   </Button>
                 </Link>
-                <Link to="/products">
-                  <Button size="lg" variant="outline" className="text-lg px-8 border-2">
+                <Link to="/products" className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 border-2">
                     <ShoppingBag className="mr-2 h-5 w-5" />
                     Shop Products
                   </Button>
@@ -83,8 +83,8 @@ const Home = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Our Signature Services</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Signature Services</h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
               Indulge in our premium beauty treatments designed to make you feel extraordinary
             </p>
           </div>
@@ -121,9 +121,9 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-gradient-to-r from-primary via-secondary to-accent">
         <div className="container mx-auto text-center text-primary-foreground">
-          <Sparkles className="h-12 w-12 mx-auto mb-6" />
-          <h2 className="text-4xl font-bold mb-4">Ready to Shine?</h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
+          <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-6" />
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Shine?</h2>
+          <p className="text-base sm:text-lg mb-8 max-w-2xl mx-auto opacity-90">
             Book your appointment today and experience the Paola Beauty Glam difference
           </p>
           <Link to="/appointments">

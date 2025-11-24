@@ -76,28 +76,28 @@ const Admin = () => {
       
       <div className="pt-32 pb-20 px-4">
         <div className="container mx-auto">
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-10 w-10 text-primary" />
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          <div className="mb-8 sm:mb-12">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                 Admin Dashboard
               </h1>
             </div>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">
               Manage appointments and availability
             </p>
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full max-w-6xl grid-cols-8">
-              <TabsTrigger value="appointments">Appointments</TabsTrigger>
-              <TabsTrigger value="availability">Availability</TabsTrigger>
-              <TabsTrigger value="recurring">Recurring</TabsTrigger>
-              <TabsTrigger value="services">Services</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1">
+              <TabsTrigger value="appointments" className="text-xs sm:text-sm">Appointments</TabsTrigger>
+              <TabsTrigger value="availability" className="text-xs sm:text-sm">Availability</TabsTrigger>
+              <TabsTrigger value="recurring" className="text-xs sm:text-sm">Recurring</TabsTrigger>
+              <TabsTrigger value="services" className="text-xs sm:text-sm">Services</TabsTrigger>
+              <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
+              <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
+              <TabsTrigger value="activity" className="text-xs sm:text-sm">Activity</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs sm:text-sm">Notifications</TabsTrigger>
             </TabsList>
 
             <TabsContent value="appointments">
