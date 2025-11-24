@@ -1,10 +1,32 @@
 import { Link } from "react-router-dom";
-import { Menu, X, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Sparkles, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const { data } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    setIsAdmin(data || false);
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -34,6 +56,12 @@ const Navigation = () => {
             <Link to="/products" className="text-foreground hover:text-primary transition-colors font-medium">
               Shop Products
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             <Link to="/appointments" className="px-6 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all">
               Book Appointment
             </Link>
@@ -72,6 +100,16 @@ const Navigation = () => {
             >
               Shop Products
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                onClick={() => setIsOpen(false)}
+                className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             <Link
               to="/appointments"
               onClick={() => setIsOpen(false)}
