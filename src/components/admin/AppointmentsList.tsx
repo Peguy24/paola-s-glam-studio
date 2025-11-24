@@ -126,76 +126,80 @@ const AppointmentsList = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {appointments.map((appointment) => (
         <Card key={appointment.id} className="border-2">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-xl mb-2">
+          <CardHeader className="pb-3 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg sm:text-xl mb-2 break-words">
                   {appointment.service?.name || appointment.service_type}
                 </CardTitle>
-                <CardDescription className="space-y-1">
+                <CardDescription className="space-y-1 text-sm">
                   {appointment.service && (
                     <div className="flex items-center gap-2 font-semibold text-primary">
                       ${appointment.service.price.toFixed(2)}
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {format(new Date(appointment.slot.date), "EEEE, MMMM d, yyyy")}
+                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">
+                      {format(new Date(appointment.slot.date), "EEEE, MMMM d, yyyy")}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    {appointment.slot.start_time.slice(0, 5)} - {appointment.slot.end_time.slice(0, 5)}
+                    <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">
+                      {appointment.slot.start_time.slice(0, 5)} - {appointment.slot.end_time.slice(0, 5)}
+                    </span>
                   </div>
                 </CardDescription>
               </div>
-              <Badge className={statusColors[appointment.status as keyof typeof statusColors]}>
+              <Badge className={`${statusColors[appointment.status as keyof typeof statusColors]} whitespace-nowrap self-start`}>
                 {appointment.status}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 pt-0">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{appointment.profile.full_name}</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm">
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                <span className="break-words">{appointment.profile.full_name}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{appointment.profile.email}</span>
+              <div className="flex items-start gap-2 text-xs sm:text-sm">
+                <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <span className="break-all">{appointment.profile.email}</span>
               </div>
               {appointment.profile.phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{appointment.profile.phone}</span>
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="break-words">{appointment.profile.phone}</span>
                 </div>
               )}
             </div>
 
             {appointment.notes && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
+              <div className="p-2.5 sm:p-3 bg-muted rounded-lg">
+                <p className="text-xs sm:text-sm text-muted-foreground break-words">
                   <strong>Notes:</strong> {appointment.notes}
                 </p>
               </div>
             )}
 
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">Update Status:</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pt-2">
+              <span className="text-xs sm:text-sm font-medium whitespace-nowrap">Update Status:</span>
               <Select
                 value={appointment.status}
                 onValueChange={(value) => updateStatus(appointment.id, value)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="pending" className="text-xs sm:text-sm">Pending</SelectItem>
+                  <SelectItem value="confirmed" className="text-xs sm:text-sm">Confirmed</SelectItem>
+                  <SelectItem value="completed" className="text-xs sm:text-sm">Completed</SelectItem>
+                  <SelectItem value="cancelled" className="text-xs sm:text-sm">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
