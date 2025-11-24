@@ -241,6 +241,56 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_patterns: {
+        Row: {
+          capacity: number
+          created_at: string
+          created_by: string
+          days_of_week: Json
+          end_time: string
+          id: string
+          is_active: boolean
+          name: string
+          start_time: string
+          updated_at: string
+          weeks_ahead: number
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          created_by: string
+          days_of_week?: Json
+          end_time: string
+          id?: string
+          is_active?: boolean
+          name: string
+          start_time: string
+          updated_at?: string
+          weeks_ahead?: number
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          created_by?: string
+          days_of_week?: Json
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          start_time?: string
+          updated_at?: string
+          weeks_ahead?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_patterns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           category: string

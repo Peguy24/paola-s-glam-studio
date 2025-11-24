@@ -10,6 +10,7 @@ import ActivityLog from "@/components/admin/ActivityLog";
 import NotificationHistory from "@/components/admin/NotificationHistory";
 import { ServiceManagement } from "@/components/admin/ServiceManagement";
 import { ServiceAnalytics } from "@/components/admin/ServiceAnalytics";
+import RecurringPatterns from "@/components/admin/RecurringPatterns";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 
@@ -88,9 +89,10 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full max-w-6xl grid-cols-7">
+            <TabsList className="grid w-full max-w-6xl grid-cols-8">
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="recurring">Recurring</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
@@ -104,6 +106,10 @@ const Admin = () => {
 
             <TabsContent value="availability">
               <AvailabilityManager />
+            </TabsContent>
+
+            <TabsContent value="recurring">
+              <RecurringPatterns />
             </TabsContent>
 
             <TabsContent value="services">
