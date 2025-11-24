@@ -163,6 +163,38 @@ const BookingCalendar = () => {
       return;
     }
 
+    // Rate limiting: Check how many bookings the user has made in the last hour
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+    const { data: recentBookings, error: rateLimitError } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("client_id", user.id)
+      .gte("created_at", oneHourAgo.toISOString());
+
+    if (rateLimitError) {
+      console.error("Rate limit check error:", rateLimitError);
+    } else if (recentBookings && recentBookings.length >= 5) {
+      toast({
+        title: "Rate limit exceeded",
+        description: "You can only book up to 5 appointments per hour. Please try again later.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to book an appointment",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     const selectedService = services.find(s => s.id === selectedServiceId);
 
     const { error } = await supabase.from("appointments").insert({
