@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, Plus, Trash2, Pencil, Copy } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, Pencil, Copy, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,17 @@ interface Slot {
   start_time: string;
   end_time: string;
   is_available: boolean;
+}
+
+interface Appointment {
+  id: string;
+  service_type: string;
+  status: string;
+  client_id: string;
+  profiles?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 const AvailabilityManager = () => {
@@ -37,6 +48,7 @@ const AvailabilityManager = () => {
   const [duplicateForm, setDuplicateForm] = useState({
     date: "",
   });
+  const [slotAppointments, setSlotAppointments] = useState<Appointment[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -150,7 +162,33 @@ const AvailabilityManager = () => {
     fetchSlots();
   };
 
-  const openEditDialog = (slot: Slot) => {
+  const checkSlotAppointments = async (slotId: string) => {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select(`
+        id,
+        service_type,
+        status,
+        client_id,
+        profiles:client_id (
+          full_name,
+          email
+        )
+      `)
+      .eq("slot_id", slotId)
+      .neq("status", "cancelled");
+
+    if (error) {
+      console.error("Error fetching appointments:", error);
+      return [];
+    }
+
+    return data || [];
+  };
+
+  const openEditDialog = async (slot: Slot) => {
+    const appointments = await checkSlotAppointments(slot.id);
+    setSlotAppointments(appointments);
     setEditingSlot(slot);
     setEditForm({
       date: slot.date,
@@ -352,6 +390,10 @@ const AvailabilityManager = () => {
                         <Button
                           variant="destructive"
                           size="sm"
+                          onClick={async () => {
+                            const appointments = await checkSlotAppointments(slot.id);
+                            setSlotAppointments(appointments);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -363,13 +405,36 @@ const AvailabilityManager = () => {
                             Are you sure you want to delete this slot for {format(new Date(slot.date), "MMM d, yyyy")} at {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
+                        {slotAppointments.length > 0 && (
+                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                              <AlertTriangle className="h-5 w-5 text-destructive" />
+                              <p className="font-semibold text-destructive">
+                                Warning: {slotAppointments.length} Active Appointment{slotAppointments.length > 1 ? 's' : ''}
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              {slotAppointments.map((apt) => (
+                                <div key={apt.id} className="text-sm bg-background rounded p-2">
+                                  <p className="font-medium">{apt.profiles?.full_name || 'Unknown'}</p>
+                                  <p className="text-muted-foreground text-xs">
+                                    {apt.service_type} - {apt.status}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-destructive mt-3">
+                              Deleting this slot will affect these appointments. Consider cancelling them first.
+                            </p>
+                          </div>
+                        )}
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => deleteSlot(slot.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Delete
+                            Delete Anyway
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -390,6 +455,29 @@ const AvailabilityManager = () => {
               Update the date and time for this availability slot
             </DialogDescription>
           </DialogHeader>
+          {slotAppointments.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <p className="font-semibold text-destructive">
+                  Warning: {slotAppointments.length} Active Appointment{slotAppointments.length > 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {slotAppointments.map((apt) => (
+                  <div key={apt.id} className="text-sm bg-background rounded p-2">
+                    <p className="font-medium">{apt.profiles?.full_name || 'Unknown'}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {apt.service_type} - {apt.status}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-destructive mt-3">
+                Changes to this slot may affect these appointments. Notify clients if needed.
+              </p>
+            </div>
+          )}
           <form onSubmit={updateSlot} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="edit_date">Date</Label>
