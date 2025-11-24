@@ -1,1 +1,4 @@
 project_id = "kwlmdywxlyzugoxbstmg"
+
+[functions.send-appointment-reminders]
+verify_jwt = false
