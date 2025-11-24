@@ -255,31 +255,31 @@ export function ServiceAnalytics() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 max-w-full">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+        <Card className="overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Bookings</CardTitle>
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalStats.totalBookings}</div>
+            <div className="text-xl sm:text-2xl font-bold">{totalStats.totalBookings}</div>
             <p className="text-xs text-muted-foreground">
               Across all services
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs sm:text-sm font-medium">
               Completed Revenue
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold">
               ${totalStats.totalRevenue.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -288,15 +288,15 @@ export function ServiceAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs sm:text-sm font-medium">
               Potential Revenue
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-xl sm:text-2xl font-bold">
               ${totalStats.potentialRevenue.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -307,117 +307,163 @@ export function ServiceAnalytics() {
       </div>
 
       {/* Service Statistics Table */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
                 Service Performance
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Detailed statistics for each service offering
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={exportToCSV} variant="outline" size="sm">
-                <FileText className="mr-2 h-4 w-4" />
-                Export CSV
+              <Button onClick={exportToCSV} variant="outline" size="sm" className="text-xs">
+                <FileText className="mr-2 h-3.5 w-3.5" />
+                CSV
               </Button>
-              <Button onClick={exportToPDF} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export PDF
+              <Button onClick={exportToPDF} variant="outline" size="sm" className="text-xs">
+                <Download className="mr-2 h-3.5 w-3.5" />
+                PDF
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {stats.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
+            <p className="text-center text-muted-foreground py-8 text-sm">
               No booking data available yet
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Total Bookings</TableHead>
-                  <TableHead className="text-right">Completed</TableHead>
-                  <TableHead className="text-right">Pending</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Potential</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="block lg:hidden space-y-3">
                 {stats.map((stat) => (
-                  <TableRow key={stat.service_id}>
-                    <TableCell className="font-medium">
-                      {stat.service_name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{stat.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ${stat.price.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-semibold">{stat.total_bookings}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant="outline"
-                        className="bg-green-500/10 text-green-500 border-green-500/20"
-                      >
-                        {stat.completed_bookings}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge
-                        variant="outline"
-                        className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                      >
-                        {stat.pending_bookings + stat.confirmed_bookings}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600">
-                      ${stat.total_revenue.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      ${stat.potential_revenue.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
+                  <Card key={stat.service_id} className="border">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm break-words">{stat.service_name}</h4>
+                          <Badge variant="outline" className="text-xs mt-1">{stat.category}</Badge>
+                        </div>
+                        <span className="text-sm font-semibold text-primary whitespace-nowrap">
+                          ${stat.price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Total:</span>{" "}
+                          <span className="font-semibold">{stat.total_bookings}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Completed:</span>{" "}
+                          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-xs">
+                            {stat.completed_bookings}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Pending:</span>{" "}
+                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-xs">
+                            {stat.pending_bookings + stat.confirmed_bookings}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Revenue:</span>{" "}
+                          <span className="font-semibold text-green-600">${stat.total_revenue.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop: Table Layout */}
+              <div className="hidden lg:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Total Bookings</TableHead>
+                      <TableHead className="text-right">Completed</TableHead>
+                      <TableHead className="text-right">Pending</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-right">Potential</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.map((stat) => (
+                      <TableRow key={stat.service_id}>
+                        <TableCell className="font-medium">
+                          {stat.service_name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{stat.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${stat.price.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold">{stat.total_bookings}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant="outline"
+                            className="bg-green-500/10 text-green-500 border-green-500/20"
+                          >
+                            {stat.completed_bookings}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant="outline"
+                            className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                          >
+                            {stat.pending_bookings + stat.confirmed_bookings}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">
+                          ${stat.total_revenue.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          ${stat.potential_revenue.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Top Services */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
+        <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle>Most Popular Services</CardTitle>
-            <CardDescription>By number of bookings</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Most Popular Services</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">By number of bookings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {stats.slice(0, 5).map((stat, index) => (
-                <div key={stat.service_id} className="flex items-center gap-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                <div key={stat.service_id} className="flex items-center gap-3 sm:gap-4">
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm flex-shrink-0">
                     {index + 1}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{stat.service_name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm break-words">{stat.service_name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {stat.category}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{stat.total_bookings}</p>
-                    <p className="text-sm text-muted-foreground">bookings</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-semibold text-sm">{stat.total_bookings}</p>
+                    <p className="text-xs text-muted-foreground">bookings</p>
                   </div>
                 </div>
               ))}
@@ -425,32 +471,32 @@ export function ServiceAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle>Top Revenue Services</CardTitle>
-            <CardDescription>By completed revenue</CardDescription>
+            <CardTitle className="text-base sm:text-lg">Top Revenue Services</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">By completed revenue</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {stats
                 .sort((a, b) => b.total_revenue - a.total_revenue)
                 .slice(0, 5)
                 .map((stat, index) => (
-                  <div key={stat.service_id} className="flex items-center gap-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/10 text-green-600 font-bold">
+                  <div key={stat.service_id} className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-green-500/10 text-green-600 font-bold text-sm flex-shrink-0">
                       {index + 1}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{stat.service_name}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm break-words">{stat.service_name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {stat.completed_bookings} completed
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600">
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-semibold text-green-600 text-sm">
                         ${stat.total_revenue.toFixed(2)}
                       </p>
-                      <p className="text-sm text-muted-foreground">revenue</p>
+                      <p className="text-xs text-muted-foreground">revenue</p>
                     </div>
                   </div>
                 ))}

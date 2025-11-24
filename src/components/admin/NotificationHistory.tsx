@@ -104,11 +104,11 @@ const NotificationHistory = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
+    <div className="space-y-3 sm:space-y-4 max-w-full">
+      <Card className="overflow-hidden">
         <CardHeader>
-          <CardTitle>Notification History</CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <CardTitle className="text-lg sm:text-xl">Notification History</CardTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Track all sent emails and SMS messages
           </p>
         </CardHeader>
@@ -116,22 +116,22 @@ const NotificationHistory = () => {
 
       {notifications.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center">
-            <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">No notifications sent yet</p>
+          <CardContent className="p-8 sm:p-12 text-center">
+            <Mail className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground text-sm">No notifications sent yet</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {notifications.map((notification) => (
-            <Card key={notification.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-3 flex-wrap">
+            <Card key={notification.id} className="overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                  <div className="flex-1 space-y-2 sm:space-y-3 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                       <div className="flex items-center gap-2">
                         {getNotificationIcon(notification.notification_type)}
-                        <span className="font-medium text-sm">
+                        <span className="font-medium text-xs sm:text-sm">
                           {notification.notification_type.toUpperCase()}
                         </span>
                       </div>
@@ -139,19 +139,19 @@ const NotificationHistory = () => {
                       {getStatusBadge(notification.status)}
                     </div>
 
-                    <div className="space-y-1 text-sm">
+                    <div className="space-y-1 text-xs sm:text-sm">
                       {notification.recipient_email && (
                         <div className="flex items-center gap-2">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-muted-foreground">
+                          <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-muted-foreground break-all">
                             {notification.recipient_email}
                           </span>
                         </div>
                       )}
                       {notification.recipient_phone && (
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-muted-foreground">
+                          <MessageSquare className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-muted-foreground break-words">
                             {notification.recipient_phone}
                           </span>
                         </div>
@@ -159,7 +159,7 @@ const NotificationHistory = () => {
                     </div>
 
                     {notification.metadata && (
-                      <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-md break-words">
                         <div className="font-medium mb-1">Details:</div>
                         {notification.metadata.service_type && (
                           <div>Service: {notification.metadata.service_type}</div>
@@ -181,13 +181,13 @@ const NotificationHistory = () => {
                     )}
 
                     {notification.error_message && (
-                      <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                      <div className="text-xs text-destructive bg-destructive/10 p-2 rounded break-words">
                         Error: {notification.error_message}
                       </div>
                     )}
                   </div>
 
-                  <div className="text-xs text-muted-foreground text-right">
+                  <div className="text-xs text-muted-foreground text-left sm:text-right flex-shrink-0">
                     <Clock className="h-3 w-3 inline mr-1" />
                     {format(new Date(notification.sent_at), "MMM d, yyyy")}
                     <br />

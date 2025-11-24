@@ -426,20 +426,20 @@ const AvailabilityManager = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-2">
+    <div className="space-y-4 sm:space-y-6 max-w-full">
+      <Card className="border-2 overflow-hidden">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
             Create New Slot
           </CardTitle>
-          <CardDescription>Add a new availability time slot</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Add a new availability time slot</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={createSlot} className="space-y-4">
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date" className="text-xs sm:text-sm">Date</Label>
                 <Input
                   id="date"
                   type="date"
@@ -447,30 +447,33 @@ const AvailabilityManager = () => {
                   onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
                   min={format(new Date(), "yyyy-MM-dd")}
                   required
+                  className="text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="start_time">Start Time</Label>
+                <Label htmlFor="start_time" className="text-xs sm:text-sm">Start Time</Label>
                 <Input
                   id="start_time"
                   type="time"
                   value={newSlot.start_time}
                   onChange={(e) => setNewSlot({ ...newSlot, start_time: e.target.value })}
                   required
+                  className="text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="end_time">End Time</Label>
+                <Label htmlFor="end_time" className="text-xs sm:text-sm">End Time</Label>
                 <Input
                   id="end_time"
                   type="time"
                   value={newSlot.end_time}
                   onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
                   required
+                  className="text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="capacity">Capacity</Label>
+                <Label htmlFor="capacity" className="text-xs sm:text-sm">Capacity</Label>
                 <Input
                   id="capacity"
                   type="number"
@@ -479,21 +482,22 @@ const AvailabilityManager = () => {
                   value={newSlot.capacity}
                   onChange={(e) => setNewSlot({ ...newSlot, capacity: parseInt(e.target.value) || 1 })}
                   required
+                  className="text-sm"
                 />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
-                <Plus className="mr-2 h-4 w-4" />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button type="submit" className="flex-1 text-xs sm:text-sm">
+                <Plus className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Create Slot
               </Button>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setShowBulkCreate(true)}
-                className="flex-1"
+                className="flex-1 text-xs sm:text-sm"
               >
-                <CalendarRange className="mr-2 h-4 w-4" />
+                <CalendarRange className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Bulk Create
               </Button>
             </div>
@@ -501,16 +505,16 @@ const AvailabilityManager = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-2">
+      <Card className="border-2 overflow-hidden">
         <CardHeader>
-          <CardTitle>Existing Slots</CardTitle>
-          <CardDescription>Manage your availability schedule</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Existing Slots</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Manage your availability schedule</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading slots...</div>
+            <div className="text-center py-8 text-sm">Loading slots...</div>
           ) : slots.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               No availability slots found
             </div>
           ) : (
@@ -518,47 +522,54 @@ const AvailabilityManager = () => {
               {slots.map((slot) => (
                 <div
                   key={slot.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Calendar className="h-4 w-4" />
-                        {format(new Date(slot.date + 'T00:00:00'), "EEE, MMM d, yyyy")}
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                        <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="break-words">
+                          {format(new Date(slot.date + 'T00:00:00'), "EEE, MMM d, yyyy")}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4" />
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                         {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}
                       </div>
-                      <Badge variant={slot.is_available ? "default" : "secondary"}>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Badge variant={slot.is_available ? "default" : "secondary"} className="text-xs">
                         {slot.is_available ? "Available" : "Unavailable"}
                       </Badge>
-                      <Badge variant="outline">
+                      <Badge variant="outline" className="text-xs">
                         Capacity: {slot.capacity}
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => toggleAvailability(slot.id, slot.is_available)}
+                      className="flex-1 min-w-[100px] text-xs"
                     >
-                      {slot.is_available ? "Mark Unavailable" : "Mark Available"}
+                      {slot.is_available ? "Unavailable" : "Available"}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openDuplicateDialog(slot)}
+                      className="text-xs"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(slot)}
+                      className="text-xs"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -569,30 +580,31 @@ const AvailabilityManager = () => {
                             const appointments = await checkSlotAppointments(slot.id);
                             setSlotAppointments(appointments);
                           }}
+                          className="text-xs"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Availability Slot?</AlertDialogTitle>
-                          <AlertDialogDescription>
+                          <AlertDialogTitle className="text-base sm:text-lg">Delete Availability Slot?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs sm:text-sm">
                             Are you sure you want to delete this slot for {format(new Date(slot.date + 'T00:00:00'), "MMM d, yyyy")} at {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         {slotAppointments.length > 0 && (
-                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 sm:p-4">
                             <div className="flex items-center gap-2 mb-3">
-                              <AlertTriangle className="h-5 w-5 text-destructive" />
-                              <p className="font-semibold text-destructive">
+                              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive flex-shrink-0" />
+                              <p className="font-semibold text-destructive text-xs sm:text-sm">
                                 Warning: {slotAppointments.length} Active Appointment{slotAppointments.length > 1 ? 's' : ''}
                               </p>
                             </div>
                             <div className="space-y-2">
                               {slotAppointments.map((apt) => (
-                                <div key={apt.id} className="text-sm bg-background rounded p-2">
-                                  <p className="font-medium">{apt.profiles?.full_name || 'Unknown'}</p>
-                                  <p className="text-muted-foreground text-xs">
+                                <div key={apt.id} className="text-xs sm:text-sm bg-background rounded p-2">
+                                  <p className="font-medium break-words">{apt.profiles?.full_name || 'Unknown'}</p>
+                                  <p className="text-muted-foreground text-xs break-words">
                                     {apt.service_type} - {apt.status}
                                   </p>
                                 </div>
@@ -604,10 +616,10 @@ const AvailabilityManager = () => {
                           </div>
                         )}
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel className="text-xs sm:text-sm">Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => deleteSlot(slot.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs sm:text-sm"
                           >
                             Delete Anyway
                           </AlertDialogAction>

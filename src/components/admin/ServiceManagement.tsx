@@ -169,10 +169,10 @@ export function ServiceManagement() {
   }
 
   return (
-    <Card>
+    <Card className="max-w-full overflow-hidden">
       <CardHeader>
-        <CardTitle>Service Management</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-lg sm:text-xl">Service Management</CardTitle>
+        <CardDescription className="text-sm">
           Add, edit, or delete services and manage categories
         </CardDescription>
       </CardHeader>
@@ -180,7 +180,7 @@ export function ServiceManagement() {
         <div className="mb-4">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm}>
+              <Button onClick={resetForm} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Service
               </Button>
@@ -266,53 +266,98 @@ export function ServiceManagement() {
         </div>
 
         {Object.keys(groupedServices).length === 0 ? (
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No services yet. Add your first service to get started.
           </p>
         ) : (
           <div className="space-y-6">
             {Object.entries(groupedServices).map(([category, categoryServices]) => (
               <div key={category}>
-                <h3 className="text-lg font-semibold mb-3">{category}</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categoryServices.map((service) => (
-                      <TableRow key={service.id}>
-                        <TableCell className="font-medium">
-                          {service.name}
-                        </TableCell>
-                        <TableCell>${service.price.toFixed(2)}</TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {service.description || "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
+                <h3 className="text-base sm:text-lg font-semibold mb-3">{category}</h3>
+                
+                {/* Mobile: Card Layout */}
+                <div className="block sm:hidden space-y-3">
+                  {categoryServices.map((service) => (
+                    <Card key={service.id} className="border">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm break-words">{service.name}</h4>
+                            <p className="text-xs text-muted-foreground mt-1 break-words">
+                              {service.description || "No description"}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold text-primary whitespace-nowrap">
+                            ${service.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => openEditDialog(service)}
+                            className="flex-1"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                            Edit
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleDelete(service.id)}
+                            className="flex-1"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete
                           </Button>
-                        </TableCell>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Desktop: Table Layout */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Service Name</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {categoryServices.map((service) => (
+                        <TableRow key={service.id}>
+                          <TableCell className="font-medium">
+                            {service.name}
+                          </TableCell>
+                          <TableCell>${service.price.toFixed(2)}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {service.description || "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(service)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(service.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             ))}
           </div>

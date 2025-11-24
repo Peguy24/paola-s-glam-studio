@@ -268,35 +268,35 @@ const RecurringPatterns = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="border-2">
+    <div className="space-y-4 sm:space-y-6 max-w-full">
+      <Card className="border-2 overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Repeat className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Repeat className="h-4 w-4 sm:h-5 sm:w-5" />
                 Recurring Patterns
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Automatically create slots based on recurring schedules
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button onClick={runPatternNow} variant="outline">
+              <Button onClick={runPatternNow} variant="outline" size="sm" className="text-xs sm:text-sm">
                 Run Now
               </Button>
-              <Button onClick={openCreateDialog}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Pattern
+              <Button onClick={openCreateDialog} size="sm" className="text-xs sm:text-sm">
+                <Plus className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                Create
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading patterns...</div>
+            <div className="text-center py-8 text-sm">Loading patterns...</div>
           ) : patterns.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               No recurring patterns found. Create one to automatically generate slots.
             </div>
           ) : (
@@ -304,16 +304,16 @@ const RecurringPatterns = () => {
               {patterns.map((pattern) => (
                 <div
                   key={pattern.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg"
                 >
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-medium">{pattern.name}</h3>
-                      <Badge variant={pattern.is_active ? "default" : "secondary"}>
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-medium text-sm sm:text-base break-words">{pattern.name}</h3>
+                      <Badge variant={pattern.is_active ? "default" : "secondary"} className="text-xs">
                         {pattern.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       {pattern.start_time.slice(0, 5)} - {pattern.end_time.slice(0, 5)} • 
                       Capacity: {pattern.capacity} • 
                       {pattern.weeks_ahead} weeks ahead
@@ -321,34 +321,36 @@ const RecurringPatterns = () => {
                     <div className="flex gap-1 flex-wrap">
                       {pattern.days_of_week.map((day) => (
                         <Badge key={day} variant="outline" className="text-xs capitalize">
-                          {day}
+                          {day.slice(0, 3)}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => toggleActive(pattern)}
+                      className="text-xs"
                     >
                       {pattern.is_active ? (
-                        <PowerOff className="h-4 w-4" />
+                        <PowerOff className="h-3.5 w-3.5" />
                       ) : (
-                        <Power className="h-4 w-4" />
+                        <Power className="h-3.5 w-3.5" />
                       )}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(pattern)}
+                      className="text-xs"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="destructive" size="sm" className="text-xs">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
