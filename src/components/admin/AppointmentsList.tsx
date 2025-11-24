@@ -38,17 +38,33 @@ const statusColors = {
   completed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const AppointmentsList = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchAppointments();
+    fetchAppointments(true);
   }, []);
 
-  const fetchAppointments = async () => {
-    const { data, error } = await supabase
+  const fetchAppointments = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const currentPage = reset ? 0 : page;
+    const from = currentPage * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    const { data, error, count } = await supabase
       .from("appointments")
       .select(`
         id,
@@ -71,8 +87,9 @@ const AppointmentsList = () => {
           email,
           phone
         )
-      `)
-      .order("created_at", { ascending: false });
+      `, { count: 'exact' })
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       toast({
@@ -80,11 +97,29 @@ const AppointmentsList = () => {
         description: "Failed to fetch appointments",
         variant: "destructive",
       });
+      setLoading(false);
+      setLoadingMore(false);
       return;
     }
 
-    setAppointments(data as unknown as Appointment[]);
+    const newAppointments = data as unknown as Appointment[];
+    
+    if (reset) {
+      setAppointments(newAppointments);
+    } else {
+      setAppointments(prev => [...prev, ...newAppointments]);
+    }
+
+    setHasMore(count ? (from + newAppointments.length) < count : false);
+    setPage(currentPage + 1);
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchAppointments(false);
+    }
   };
 
   const updateStatus = async (appointmentId: string, newStatus: string) => {
@@ -107,7 +142,7 @@ const AppointmentsList = () => {
       description: "Appointment status updated",
     });
 
-    fetchAppointments();
+    fetchAppointments(true);
   };
 
   if (loading) {
@@ -206,6 +241,19 @@ const AppointmentsList = () => {
           </CardContent>
         </Card>
       ))}
+      
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button 
+            onClick={loadMore} 
+            disabled={loadingMore}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            {loadingMore ? "Loading..." : "Load More"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

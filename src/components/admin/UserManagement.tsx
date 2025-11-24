@@ -17,20 +17,34 @@ interface UserProfile {
   user_roles: Array<{ role: string }>;
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(true);
   }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  const fetchUsers = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const currentPage = reset ? 0 : page;
+    const from = currentPage * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
     
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("profiles")
       .select(`
         id,
@@ -41,8 +55,9 @@ const UserManagement = () => {
         user_roles (
           role
         )
-      `)
-      .order("created_at", { ascending: false });
+      `, { count: 'exact' })
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       toast({
@@ -52,11 +67,26 @@ const UserManagement = () => {
       });
       console.error("Error fetching users:", error);
       setLoading(false);
+      setLoadingMore(false);
       return;
     }
 
-    setUsers(data || []);
+    if (reset) {
+      setUsers(data || []);
+    } else {
+      setUsers(prev => [...prev, ...(data || [])]);
+    }
+
+    setHasMore(count ? (from + (data?.length || 0)) < count : false);
+    setPage(currentPage + 1);
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchUsers(false);
+    }
   };
 
   const toggleAdminRole = async (userId: string, currentlyAdmin: boolean) => {
@@ -107,7 +137,7 @@ const UserManagement = () => {
       });
     }
 
-    fetchUsers();
+    fetchUsers(true);
   };
 
   const isAdmin = (user: UserProfile) => {
@@ -251,6 +281,19 @@ const UserManagement = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+        
+        {!loading && filteredUsers.length > 0 && hasMore && searchTerm === "" && (
+          <div className="flex justify-center pt-4">
+            <Button 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </Button>
           </div>
         )}
       </CardContent>

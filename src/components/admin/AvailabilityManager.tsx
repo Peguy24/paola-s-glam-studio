@@ -32,9 +32,14 @@ interface Appointment {
   };
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const AvailabilityManager = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [newSlot, setNewSlot] = useState({
     date: "",
     start_time: "",
@@ -73,16 +78,28 @@ const AvailabilityManager = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSlots();
+    fetchSlots(true);
   }, []);
 
-  const fetchSlots = async () => {
-    const { data, error } = await supabase
+  const fetchSlots = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const currentPage = reset ? 0 : page;
+    const from = currentPage * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    const { data, error, count } = await supabase
       .from("availability_slots")
-      .select("*")
+      .select("*", { count: 'exact' })
       .gte("date", format(new Date(), "yyyy-MM-dd"))
       .order("date", { ascending: true })
-      .order("start_time", { ascending: true });
+      .order("start_time", { ascending: true })
+      .range(from, to);
 
     if (error) {
       toast({
@@ -90,11 +107,27 @@ const AvailabilityManager = () => {
         description: "Failed to fetch availability slots",
         variant: "destructive",
       });
+      setLoading(false);
+      setLoadingMore(false);
       return;
     }
 
-    setSlots(data);
+    if (reset) {
+      setSlots(data);
+    } else {
+      setSlots(prev => [...prev, ...data]);
+    }
+
+    setHasMore(count ? (from + data.length) < count : false);
+    setPage(currentPage + 1);
     setLoading(false);
+    setLoadingMore(false);
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchSlots(false);
+    }
   };
 
   const createSlot = async (e: React.FormEvent) => {
@@ -135,7 +168,7 @@ const AvailabilityManager = () => {
     });
 
     setNewSlot({ date: "", start_time: "", end_time: "", capacity: 1 });
-    fetchSlots();
+    fetchSlots(true);
   };
 
   const deleteSlot = async (slotId: string) => {
@@ -172,7 +205,7 @@ const AvailabilityManager = () => {
     });
 
     setSlotAppointments([]);
-    fetchSlots();
+    fetchSlots(true);
   };
 
   const toggleAvailability = async (slotId: string, currentStatus: boolean) => {
@@ -195,7 +228,7 @@ const AvailabilityManager = () => {
       description: "Availability updated",
     });
 
-    fetchSlots();
+    fetchSlots(true);
   };
 
   const checkSlotAppointments = async (slotId: string) => {
@@ -283,7 +316,7 @@ const AvailabilityManager = () => {
 
     setEditingSlot(null);
     setSlotAppointments([]);
-    fetchSlots();
+    fetchSlots(true);
   };
 
   const openDuplicateDialog = (slot: Slot) => {
@@ -332,7 +365,7 @@ const AvailabilityManager = () => {
     });
 
     setDuplicatingSlot(null);
-    fetchSlots();
+    fetchSlots(true);
   };
 
   const createBulkSlots = async (e: React.FormEvent) => {
@@ -422,7 +455,7 @@ const AvailabilityManager = () => {
         sunday: false,
       },
     });
-    fetchSlots();
+    fetchSlots(true);
   };
 
   return (
@@ -629,6 +662,19 @@ const AvailabilityManager = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          
+          {!loading && slots.length > 0 && hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button 
+                onClick={loadMore} 
+                disabled={loadingMore}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                {loadingMore ? "Loading..." : "Load More"}
+              </Button>
             </div>
           )}
         </CardContent>
