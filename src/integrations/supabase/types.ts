@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          reminder_sent: boolean
           service_type: string
           slot_id: string
           status: string
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          reminder_sent?: boolean
           service_type: string
           slot_id: string
           status?: string
@@ -40,6 +42,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          reminder_sent?: boolean
           service_type?: string
           slot_id?: string
           status?: string
