@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Menu, X, Sparkles, Shield } from "lucide-react";
+import { Menu, X, Sparkles, Shield, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
@@ -7,18 +7,22 @@ import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
+    checkAuthStatus();
   }, []);
 
-  const checkAdminStatus = async () => {
+  const checkAuthStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       setIsAdmin(false);
+      setIsLoggedIn(false);
       return;
     }
+
+    setIsLoggedIn(true);
 
     const { data } = await supabase.rpc("has_role", {
       _user_id: user.id,
@@ -56,6 +60,12 @@ const Navigation = () => {
             <Link to="/products" className="text-foreground hover:text-primary transition-colors font-medium">
               Shop Products
             </Link>
+            {isLoggedIn && (
+              <Link to="/profile" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Profile
+              </Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
                 <Shield className="h-4 w-4" />
@@ -100,6 +110,16 @@ const Navigation = () => {
             >
               Shop Products
             </Link>
+            {isLoggedIn && (
+              <Link
+                to="/profile"
+                onClick={() => setIsOpen(false)}
+                className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+              >
+                <User className="h-4 w-4" />
+                Profile
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 to="/admin"
