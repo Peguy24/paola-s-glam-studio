@@ -2,3 +2,6 @@ project_id = "kwlmdywxlyzugoxbstmg"
 
 [functions.send-appointment-reminders]
 verify_jwt = false
+
+[functions.process-recurring-patterns]
+verify_jwt = true
