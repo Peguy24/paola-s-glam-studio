@@ -386,7 +386,7 @@ const AvailabilityManager = () => {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(slot.date), "EEE, MMM d, yyyy")}
+                        {format(new Date(slot.date + 'T00:00:00'), "EEE, MMM d, yyyy")}
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="h-4 w-4" />
@@ -436,7 +436,7 @@ const AvailabilityManager = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Availability Slot?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this slot for {format(new Date(slot.date), "MMM d, yyyy")} at {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}? This action cannot be undone.
+                            Are you sure you want to delete this slot for {format(new Date(slot.date + 'T00:00:00'), "MMM d, yyyy")} at {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         {slotAppointments.length > 0 && (
