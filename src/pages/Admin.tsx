@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentsList from "@/components/admin/AppointmentsList";
 import AvailabilityManager from "@/components/admin/AvailabilityManager";
+import UserManagement from "@/components/admin/UserManagement";
 import { useToast } from "@/hooks/use-toast";
 import { Shield } from "lucide-react";
 
@@ -83,9 +84,10 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsList className="grid w-full max-w-2xl grid-cols-3">
               <TabsTrigger value="appointments">Appointments</TabsTrigger>
               <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
 
             <TabsContent value="appointments">
@@ -94,6 +96,10 @@ const Admin = () => {
 
             <TabsContent value="availability">
               <AvailabilityManager />
+            </TabsContent>
+
+            <TabsContent value="users">
+              <UserManagement />
             </TabsContent>
           </Tabs>
         </div>
