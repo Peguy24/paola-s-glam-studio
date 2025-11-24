@@ -16,8 +16,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { BarChart3, DollarSign, TrendingUp, Calendar, Download, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ServiceStats {
   service_id: string;
@@ -138,6 +141,115 @@ export function ServiceAnalytics() {
     }
   };
 
+  const exportToCSV = () => {
+    const csvHeaders = [
+      "Service Name",
+      "Category",
+      "Price",
+      "Total Bookings",
+      "Pending",
+      "Confirmed",
+      "Completed",
+      "Cancelled",
+      "Completed Revenue",
+      "Potential Revenue",
+    ];
+
+    const csvRows = stats.map((stat) => [
+      stat.service_name,
+      stat.category,
+      stat.price.toFixed(2),
+      stat.total_bookings,
+      stat.pending_bookings,
+      stat.confirmed_bookings,
+      stat.completed_bookings,
+      stat.cancelled_bookings,
+      stat.total_revenue.toFixed(2),
+      stat.potential_revenue.toFixed(2),
+    ]);
+
+    const csvContent = [
+      csvHeaders.join(","),
+      ...csvRows.map((row) => row.join(",")),
+      "",
+      "Summary",
+      `Total Bookings,${totalStats.totalBookings}`,
+      `Total Revenue,$${totalStats.totalRevenue.toFixed(2)}`,
+      `Potential Revenue,$${totalStats.potentialRevenue.toFixed(2)}`,
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `service-analytics-${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Success",
+      description: "Analytics exported to CSV",
+    });
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text("Service Analytics Report", 14, 20);
+
+    // Date
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+
+    // Summary section
+    doc.setFontSize(14);
+    doc.text("Summary", 14, 38);
+    doc.setFontSize(10);
+    doc.text(`Total Bookings: ${totalStats.totalBookings}`, 14, 45);
+    doc.text(`Completed Revenue: $${totalStats.totalRevenue.toFixed(2)}`, 14, 52);
+    doc.text(`Potential Revenue: $${totalStats.potentialRevenue.toFixed(2)}`, 14, 59);
+
+    // Service statistics table
+    autoTable(doc, {
+      startY: 68,
+      head: [
+        [
+          "Service",
+          "Category",
+          "Price",
+          "Total",
+          "Completed",
+          "Pending",
+          "Revenue",
+          "Potential",
+        ],
+      ],
+      body: stats.map((stat) => [
+        stat.service_name,
+        stat.category,
+        `$${stat.price.toFixed(2)}`,
+        stat.total_bookings,
+        stat.completed_bookings,
+        stat.pending_bookings + stat.confirmed_bookings,
+        `$${stat.total_revenue.toFixed(2)}`,
+        `$${stat.potential_revenue.toFixed(2)}`,
+      ]),
+      headStyles: { fillColor: [79, 70, 229] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`service-analytics-${new Date().toISOString().split("T")[0]}.pdf`);
+
+    toast({
+      title: "Success",
+      description: "Analytics exported to PDF",
+    });
+  };
+
   if (loading) {
     return <div>Loading analytics...</div>;
   }
@@ -197,13 +309,27 @@ export function ServiceAnalytics() {
       {/* Service Statistics Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Service Performance
-          </CardTitle>
-          <CardDescription>
-            Detailed statistics for each service offering
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Service Performance
+              </CardTitle>
+              <CardDescription>
+                Detailed statistics for each service offering
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={exportToCSV} variant="outline" size="sm">
+                <FileText className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {stats.length === 0 ? (
