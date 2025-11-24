@@ -154,6 +154,53 @@ export type Database = {
           },
         ]
       }
+      notification_history: {
+        Row: {
+          appointment_id: string | null
+          change_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          recipient_email: string | null
+          recipient_phone: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          change_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type: string
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          sent_at?: string
+          status: string
+        }
+        Update: {
+          appointment_id?: string | null
+          change_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          recipient_email?: string | null
+          recipient_phone?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_history_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

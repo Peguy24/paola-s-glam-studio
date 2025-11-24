@@ -158,6 +158,12 @@ const handler = async (req: Request): Promise<Response> => {
         smsBody = `Paola Beauty Glam: Your ${appointment.service_type} appointment has been rescheduled to ${newTimeInfo}. Original: ${originalSlot.date} at ${originalSlot.start_time}.`;
       }
 
+      let emailSuccess = false;
+      let smsSuccess = false;
+      let emailError = null;
+      let smsError = null;
+
+      // Send email
       try {
         const response = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -175,12 +181,15 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!response.ok) {
           const errorData = await response.text();
+          emailError = errorData;
           console.error(`Failed to send email to ${clientEmail}:`, errorData);
         } else {
+          emailSuccess = true;
           console.log(`Email sent to ${clientEmail} for appointment ${appointment.id}`);
         }
-      } catch (emailError) {
-        console.error(`Failed to send email to ${clientEmail}:`, emailError);
+      } catch (error) {
+        emailError = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to send email to ${clientEmail}:`, error);
       }
 
       // Send SMS if Twilio is configured and client has a phone number
@@ -194,8 +203,10 @@ const handler = async (req: Request): Promise<Response> => {
         );
         
         if (smsResult.success) {
+          smsSuccess = true;
           console.log(`SMS sent to ${clientPhone} for appointment ${appointment.id}`);
         } else {
+          smsError = smsResult.error;
           console.error(`Failed to send SMS to ${clientPhone}:`, smsResult.error);
         }
       } else if (!smsEnabled) {
@@ -203,6 +214,29 @@ const handler = async (req: Request): Promise<Response> => {
       } else if (!clientPhone) {
         console.log(`No phone number for appointment ${appointment.id}`);
       }
+
+      // Log notification to history
+      const notificationType = emailSuccess && smsSuccess ? 'both' : emailSuccess ? 'email' : smsSuccess ? 'sms' : 'email';
+      const status = (emailSuccess || smsSuccess) ? 'sent' : 'failed';
+      const errorMessage = emailError || smsError ? `Email: ${emailError || 'N/A'}, SMS: ${smsError || 'N/A'}` : null;
+
+      await supabase.from('notification_history').insert({
+        appointment_id: appointment.id,
+        recipient_email: clientEmail,
+        recipient_phone: clientPhone,
+        notification_type: notificationType,
+        change_type: changeType,
+        status: status,
+        error_message: errorMessage,
+        metadata: {
+          service_type: appointment.service_type,
+          original_date: originalSlot.date,
+          original_time: `${originalSlot.start_time} - ${originalSlot.end_time}`,
+          new_date: newDate,
+          new_start_time: newStartTime,
+          new_end_time: newEndTime,
+        }
+      });
     });
 
     await Promise.all(emailPromises);
