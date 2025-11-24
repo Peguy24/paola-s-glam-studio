@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { Calendar, Clock, Plus, Trash2, Pencil, Copy, AlertTriangle } from "lucide-react";
+import { format, addDays, eachDayOfInterval, isWeekend } from "date-fns";
+import { Calendar, Clock, Plus, Trash2, Pencil, Copy, AlertTriangle, CalendarRange } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Slot {
   id: string;
@@ -52,6 +53,23 @@ const AvailabilityManager = () => {
     date: "",
   });
   const [slotAppointments, setSlotAppointments] = useState<Appointment[]>([]);
+  const [showBulkCreate, setShowBulkCreate] = useState(false);
+  const [bulkForm, setBulkForm] = useState({
+    start_date: "",
+    end_date: "",
+    start_time: "",
+    end_time: "",
+    capacity: 1,
+    days: {
+      monday: true,
+      tuesday: true,
+      wednesday: true,
+      thursday: true,
+      friday: true,
+      saturday: false,
+      sunday: false,
+    },
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -317,6 +335,96 @@ const AvailabilityManager = () => {
     fetchSlots();
   };
 
+  const createBulkSlots = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get all dates in the range
+    const startDate = new Date(bulkForm.start_date + 'T00:00:00');
+    const endDate = new Date(bulkForm.end_date + 'T00:00:00');
+    const allDates = eachDayOfInterval({ start: startDate, end: endDate });
+
+    // Filter dates based on selected days
+    const dayMap = {
+      0: 'sunday',
+      1: 'monday',
+      2: 'tuesday',
+      3: 'wednesday',
+      4: 'thursday',
+      5: 'friday',
+      6: 'saturday',
+    };
+
+    const selectedDates = allDates.filter((date) => {
+      const dayName = dayMap[date.getDay() as keyof typeof dayMap];
+      return bulkForm.days[dayName as keyof typeof bulkForm.days];
+    });
+
+    if (selectedDates.length === 0) {
+      toast({
+        title: "Error",
+        description: "No dates match the selected days",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create slots for all selected dates
+    const slots = selectedDates.map((date) => ({
+      date: format(date, "yyyy-MM-dd"),
+      start_time: bulkForm.start_time,
+      end_time: bulkForm.end_time,
+      capacity: bulkForm.capacity,
+      created_by: user.id,
+      is_available: true,
+    }));
+
+    const { error } = await supabase.from("availability_slots").insert(slots);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: `Created ${slots.length} availability slots`,
+    });
+
+    setShowBulkCreate(false);
+    setBulkForm({
+      start_date: "",
+      end_date: "",
+      start_time: "",
+      end_time: "",
+      capacity: 1,
+      days: {
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: false,
+        sunday: false,
+      },
+    });
+    fetchSlots();
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-2">
@@ -374,10 +482,21 @@ const AvailabilityManager = () => {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Slot
-            </Button>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Slot
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowBulkCreate(true)}
+                className="flex-1"
+              >
+                <CalendarRange className="mr-2 h-4 w-4" />
+                Bulk Create
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -629,6 +748,118 @@ const AvailabilityManager = () => {
               </div>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showBulkCreate} onOpenChange={setShowBulkCreate}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Bulk Create Availability Slots</DialogTitle>
+            <DialogDescription>
+              Create multiple slots across a date range with selected days
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={createBulkSlots} className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bulk_start_date">Start Date</Label>
+                <Input
+                  id="bulk_start_date"
+                  type="date"
+                  value={bulkForm.start_date}
+                  onChange={(e) => setBulkForm({ ...bulkForm, start_date: e.target.value })}
+                  min={format(new Date(), "yyyy-MM-dd")}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulk_end_date">End Date</Label>
+                <Input
+                  id="bulk_end_date"
+                  type="date"
+                  value={bulkForm.end_date}
+                  onChange={(e) => setBulkForm({ ...bulkForm, end_date: e.target.value })}
+                  min={bulkForm.start_date || format(new Date(), "yyyy-MM-dd")}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Days of Week</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(bulkForm.days).map(([day, checked]) => (
+                  <div key={day} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`bulk_${day}`}
+                      checked={checked}
+                      onCheckedChange={(value) =>
+                        setBulkForm({
+                          ...bulkForm,
+                          days: { ...bulkForm.days, [day]: value === true },
+                        })
+                      }
+                    />
+                    <Label
+                      htmlFor={`bulk_${day}`}
+                      className="text-sm font-normal capitalize cursor-pointer"
+                    >
+                      {day}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bulk_start_time">Start Time</Label>
+                <Input
+                  id="bulk_start_time"
+                  type="time"
+                  value={bulkForm.start_time}
+                  onChange={(e) => setBulkForm({ ...bulkForm, start_time: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulk_end_time">End Time</Label>
+                <Input
+                  id="bulk_end_time"
+                  type="time"
+                  value={bulkForm.end_time}
+                  onChange={(e) => setBulkForm({ ...bulkForm, end_time: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulk_capacity">Capacity</Label>
+                <Input
+                  id="bulk_capacity"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={bulkForm.capacity}
+                  onChange={(e) => setBulkForm({ ...bulkForm, capacity: parseInt(e.target.value) || 1 })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                <CalendarRange className="mr-2 h-4 w-4" />
+                Create Slots
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowBulkCreate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
