@@ -8,8 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { Clock, Calendar as CalendarIcon } from "lucide-react";
 import { z } from "zod";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface TimeSlot {
   id: string;
@@ -44,7 +55,9 @@ const BookingCalendar = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchServices();
@@ -239,14 +252,87 @@ const BookingCalendar = () => {
       setSelectedSlot("");
       setSelectedServiceId("");
       setNotes("");
+      setDrawerOpen(false);
       fetchAvailableSlots();
     }
 
     setLoading(false);
   };
 
+  // Booking details content (reusable for both card and drawer)
+  const BookingDetailsContent = () => (
+    <>
+      <div className="space-y-2">
+        <Label className="text-sm sm:text-base">Service</Label>
+        <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
+          <SelectTrigger className="text-sm sm:text-base">
+            <SelectValue placeholder="Select a service" />
+          </SelectTrigger>
+          <SelectContent className="bg-background z-50">
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id} className="text-sm sm:text-base">
+                <div className="flex justify-between items-center w-full gap-2">
+                  <span className="truncate">{service.name}</span>
+                  <span className="text-muted-foreground whitespace-nowrap">${service.price.toFixed(2)}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {date && (
+        <div className="space-y-2">
+          <Label className="text-sm sm:text-base">Available Times</Label>
+          {availableSlots.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No slots available for this date</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+              {availableSlots.map((slot) => {
+                const remaining = slot.capacity - (slot.bookings_count || 0);
+                return (
+                  <Button
+                    key={slot.id}
+                    variant={selectedSlot === slot.id ? "default" : "outline"}
+                    onClick={() => setSelectedSlot(slot.id)}
+                    className="justify-start flex-col items-start h-auto py-2 px-3"
+                  >
+                    <div className="flex items-center w-full">
+                      <Clock className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+                      <span className="text-sm sm:text-base">{slot.start_time.slice(0, 5)}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {remaining} {remaining === 1 ? 'spot' : 'spots'} left
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="notes" className="text-sm sm:text-base">Notes (Optional)</Label>
+        <Textarea
+          id="notes"
+          placeholder="Any special requests or information..."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          maxLength={500}
+          className="text-sm sm:text-base resize-none"
+        />
+        <p className="text-xs text-muted-foreground">
+          {notes.length}/500 characters
+        </p>
+      </div>
+    </>
+  );
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+    <div className="space-y-4">
+      {/* Calendar Card - Always visible */}
       <Card className="border-2">
         <CardHeader>
           <CardTitle className="text-xl sm:text-2xl">Select Date</CardTitle>
@@ -263,87 +349,61 @@ const BookingCalendar = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-2">
-        <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl">Booking Details</CardTitle>
-          <CardDescription className="text-sm sm:text-base">Complete your appointment booking</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm sm:text-base">Service</Label>
-            <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-              <SelectTrigger className="text-sm sm:text-base">
-                <SelectValue placeholder="Select a service" />
-              </SelectTrigger>
-              <SelectContent>
-                {services.map((service) => (
-                  <SelectItem key={service.id} value={service.id} className="text-sm sm:text-base">
-                    <div className="flex justify-between items-center w-full gap-2">
-                      <span className="truncate">{service.name}</span>
-                      <span className="text-muted-foreground whitespace-nowrap">${service.price.toFixed(2)}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {date && (
-            <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Available Times</Label>
-              {availableSlots.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No slots available for this date</p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {availableSlots.map((slot) => {
-                    const remaining = slot.capacity - (slot.bookings_count || 0);
-                    return (
-                      <Button
-                        key={slot.id}
-                        variant={selectedSlot === slot.id ? "default" : "outline"}
-                        onClick={() => setSelectedSlot(slot.id)}
-                        className="justify-start flex-col items-start h-auto py-2 px-3"
-                      >
-                        <div className="flex items-center w-full">
-                          <Clock className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
-                          <span className="text-sm sm:text-base">{slot.start_time.slice(0, 5)}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {remaining} {remaining === 1 ? 'spot' : 'spots'} left
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+      {/* Mobile: Drawer Trigger Button */}
+      {isMobile && date && (
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerTrigger asChild>
+            <Button className="w-full" size="lg">
+              <CalendarIcon className="mr-2 h-5 w-5" />
+              Continue to Booking Details
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader>
+              <DrawerTitle>Booking Details</DrawerTitle>
+              <DrawerDescription>
+                Complete your appointment for {date && format(date, "MMMM d, yyyy")}
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="px-4 overflow-y-auto space-y-4 pb-4">
+              <BookingDetailsContent />
             </div>
-          )}
+            <DrawerFooter className="pt-2">
+              <Button
+                onClick={handleBooking}
+                disabled={loading || !selectedSlot || !selectedServiceId}
+                className="w-full"
+                size="lg"
+              >
+                {loading ? "Booking..." : "Book Appointment"}
+              </Button>
+              <DrawerClose asChild>
+                <Button variant="outline" className="w-full">Cancel</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      )}
 
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm sm:text-base">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any special requests or information..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              maxLength={500}
-              className="text-sm sm:text-base resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              {notes.length}/500 characters
-            </p>
-          </div>
-
-          <Button
-            onClick={handleBooking}
-            disabled={loading || !selectedSlot || !selectedServiceId}
-            className="w-full text-sm sm:text-base py-2 sm:py-3"
-          >
-            {loading ? "Booking..." : "Book Appointment"}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Desktop: Card Layout */}
+      {!isMobile && (
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl">Booking Details</CardTitle>
+            <CardDescription className="text-sm sm:text-base">Complete your appointment booking</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <BookingDetailsContent />
+            <Button
+              onClick={handleBooking}
+              disabled={loading || !selectedSlot || !selectedServiceId}
+              className="w-full text-sm sm:text-base py-2 sm:py-3"
+            >
+              {loading ? "Booking..." : "Book Appointment"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
