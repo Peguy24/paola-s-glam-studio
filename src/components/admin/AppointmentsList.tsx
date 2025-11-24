@@ -126,9 +126,9 @@ const AppointmentsList = () => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 max-w-full">
       {appointments.map((appointment) => (
-        <Card key={appointment.id} className="border-2">
+        <Card key={appointment.id} className="border-2 w-full overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -143,7 +143,7 @@ const AppointmentsList = () => {
                   )}
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm">
+                    <span className="text-xs sm:text-sm break-words">
                       {format(new Date(appointment.slot.date), "EEEE, MMMM d, yyyy")}
                     </span>
                   </div>
