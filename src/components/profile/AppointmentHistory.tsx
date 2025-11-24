@@ -24,6 +24,11 @@ interface Appointment {
   status: string;
   notes: string | null;
   created_at: string;
+  service: {
+    name: string;
+    price: number;
+    category: string;
+  } | null;
   slot: {
     date: string;
     start_time: string;
@@ -60,6 +65,11 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
         status,
         notes,
         created_at,
+        service:service_id (
+          name,
+          price,
+          category
+        ),
         slot:slot_id (
           date,
           start_time,
@@ -141,8 +151,15 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-xl mb-2">{appointment.service_type}</CardTitle>
+                  <CardTitle className="text-xl mb-2">
+                    {appointment.service?.name || appointment.service_type}
+                  </CardTitle>
                   <CardDescription className="space-y-1">
+                    {appointment.service && (
+                      <div className="flex items-center gap-2 font-semibold text-primary">
+                        ${appointment.service.price.toFixed(2)}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       {format(appointmentDate, "EEEE, MMMM d, yyyy")}
