@@ -15,6 +15,8 @@ interface TimeSlot {
   date: string;
   start_time: string;
   end_time: string;
+  capacity: number;
+  bookings_count?: number;
 }
 
 interface Service {
@@ -68,14 +70,16 @@ const BookingCalendar = () => {
     if (!date) return;
 
     const formattedDate = format(date, "yyyy-MM-dd");
-    const { data, error } = await supabase
+    
+    // Fetch slots
+    const { data: slotsData, error: slotsError } = await supabase
       .from("availability_slots")
       .select("*")
       .eq("date", formattedDate)
       .eq("is_available", true)
       .order("start_time");
 
-    if (error) {
+    if (slotsError) {
       toast({
         title: "Error",
         description: "Failed to fetch available slots",
@@ -84,7 +88,35 @@ const BookingCalendar = () => {
       return;
     }
 
-    setAvailableSlots(data || []);
+    if (!slotsData || slotsData.length === 0) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    // Count bookings for each slot
+    const slotsWithCapacity = await Promise.all(
+      slotsData.map(async (slot) => {
+        const { count, error: countError } = await supabase
+          .from("appointments")
+          .select("*", { count: "exact", head: true })
+          .eq("slot_id", slot.id)
+          .neq("status", "cancelled");
+
+        if (countError) {
+          console.error("Error counting bookings:", countError);
+          return { ...slot, bookings_count: 0 };
+        }
+
+        return { ...slot, bookings_count: count || 0 };
+      })
+    );
+
+    // Filter out slots that are at capacity
+    const availableSlotsFiltered = slotsWithCapacity.filter(
+      (slot) => slot.bookings_count! < slot.capacity
+    );
+
+    setAvailableSlots(availableSlotsFiltered);
   };
 
   const handleBooking = async () => {
@@ -192,17 +224,25 @@ const BookingCalendar = () => {
                 <p className="text-sm text-muted-foreground">No slots available for this date</p>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {availableSlots.map((slot) => (
-                    <Button
-                      key={slot.id}
-                      variant={selectedSlot === slot.id ? "default" : "outline"}
-                      onClick={() => setSelectedSlot(slot.id)}
-                      className="justify-start"
-                    >
-                      <Clock className="mr-2 h-4 w-4" />
-                      {slot.start_time.slice(0, 5)}
-                    </Button>
-                  ))}
+                  {availableSlots.map((slot) => {
+                    const remaining = slot.capacity - (slot.bookings_count || 0);
+                    return (
+                      <Button
+                        key={slot.id}
+                        variant={selectedSlot === slot.id ? "default" : "outline"}
+                        onClick={() => setSelectedSlot(slot.id)}
+                        className="justify-start flex-col items-start h-auto py-2"
+                      >
+                        <div className="flex items-center w-full">
+                          <Clock className="mr-2 h-4 w-4" />
+                          {slot.start_time.slice(0, 5)}
+                        </div>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {remaining} {remaining === 1 ? 'spot' : 'spots'} left
+                        </span>
+                      </Button>
+                    );
+                  })}
                 </div>
               )}
             </div>
