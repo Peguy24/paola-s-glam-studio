@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Shield, ShieldOff, Mail, Calendar } from "lucide-react";
+import { Users, Shield, ShieldOff, Mail, Calendar, Download, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 interface UserProfile {
@@ -19,6 +20,7 @@ interface UserProfile {
 const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,25 +114,80 @@ const UserManagement = () => {
     return user.user_roles.some((role) => role.role === "admin");
   };
 
+  const downloadCSV = () => {
+    const csvHeaders = ["Name", "Email", "Phone", "Role", "Joined Date"];
+    const csvRows = users.map((user) => [
+      user.full_name || "No name",
+      user.email,
+      user.phone || "N/A",
+      isAdmin(user) ? "Admin" : "Client",
+      format(new Date(user.created_at), "MMM d, yyyy"),
+    ]);
+
+    const csvContent = [
+      csvHeaders.join(","),
+      ...csvRows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `users-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Success",
+      description: "User data exported to CSV",
+    });
+  };
+
+  const filteredUsers = users.filter((user) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.full_name?.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.phone?.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <Card className="border-2">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          User Management
-        </CardTitle>
-        <CardDescription>Manage user accounts and permissions</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
+            <CardDescription>Manage user accounts and permissions</CardDescription>
+          </div>
+          <Button onClick={downloadCSV} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email, or phone..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="text-center py-8">Loading users...</div>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No users found
+            {searchTerm ? "No users match your search" : "No users found"}
           </div>
         ) : (
           <div className="space-y-4">
-            {users.map((user) => {
+            {filteredUsers.map((user) => {
               const userIsAdmin = isAdmin(user);
               
               return (
