@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import AppointmentsList from "@/components/admin/AppointmentsList";
 import AvailabilityManager from "@/components/admin/AvailabilityManager";
 import UserManagement from "@/components/admin/UserManagement";
@@ -12,12 +14,15 @@ import { ServiceManagement } from "@/components/admin/ServiceManagement";
 import { ServiceAnalytics } from "@/components/admin/ServiceAnalytics";
 import RecurringPatterns from "@/components/admin/RecurringPatterns";
 import { useToast } from "@/hooks/use-toast";
-import { Shield } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart } from "lucide-react";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkAdminStatus();
@@ -88,17 +93,108 @@ const Admin = () => {
             </p>
           </div>
 
-          <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1">
-              <TabsTrigger value="appointments" className="text-xs sm:text-sm">Appointments</TabsTrigger>
-              <TabsTrigger value="availability" className="text-xs sm:text-sm">Availability</TabsTrigger>
-              <TabsTrigger value="recurring" className="text-xs sm:text-sm">Recurring</TabsTrigger>
-              <TabsTrigger value="services" className="text-xs sm:text-sm">Services</TabsTrigger>
-              <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
-              <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
-              <TabsTrigger value="activity" className="text-xs sm:text-sm">Activity</TabsTrigger>
-              <TabsTrigger value="notifications" className="text-xs sm:text-sm">Notifications</TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            {/* Desktop: Horizontal Tab List */}
+            {!isMobile && (
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1">
+                <TabsTrigger value="appointments" className="text-sm">
+                  <Calendar className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Appointments
+                </TabsTrigger>
+                <TabsTrigger value="availability" className="text-sm">
+                  <Clock className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Availability
+                </TabsTrigger>
+                <TabsTrigger value="recurring" className="text-sm">
+                  <Clock className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Recurring
+                </TabsTrigger>
+                <TabsTrigger value="services" className="text-sm">
+                  <Package className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Services
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="text-sm">
+                  <BarChart className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Analytics
+                </TabsTrigger>
+                <TabsTrigger value="users" className="text-sm">
+                  <Users className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Users
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="text-sm">
+                  <Activity className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Activity
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="text-sm">
+                  <Bell className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Notifications
+                </TabsTrigger>
+              </TabsList>
+            )}
+
+            {/* Mobile: Dropdown Select */}
+            {isMobile && (
+              <div className="space-y-2">
+                <Label htmlFor="admin-section" className="text-sm font-medium">
+                  Select Section
+                </Label>
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger id="admin-section" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="appointments">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Appointments</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="availability">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Availability</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="recurring">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Recurring Patterns</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="services">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>Services</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="analytics">
+                      <div className="flex items-center gap-2">
+                        <BarChart className="h-4 w-4" />
+                        <span>Analytics</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="users">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>User Management</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="activity">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        <span>Activity Log</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="notifications">
+                      <div className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        <span>Notifications</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <TabsContent value="appointments">
               <AppointmentsList />
