@@ -1,53 +1,179 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scissors, Paintbrush, Sparkles, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2 } from "lucide-react";
+
+interface Service {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description: string | null;
+}
+
+const categoryIcons: Record<string, JSX.Element> = {
+  "Hair Services": <Scissors className="h-8 w-8" />,
+  "Nail Services": <Paintbrush className="h-8 w-8" />,
+  "Makeup Services": <Sparkles className="h-8 w-8" />,
+  "Spa Treatments": <Heart className="h-8 w-8" />,
+};
 
 const Services = () => {
-  const services = [
-    {
-      icon: <Scissors className="h-8 w-8" />,
-      title: "Hair Services",
-      items: [
-        { name: "Haircut & Styling", price: "$45+" },
-        { name: "Hair Coloring", price: "$80+" },
-        { name: "Highlights", price: "$120+" },
-        { name: "Deep Conditioning", price: "$35" },
-        { name: "Keratin Treatment", price: "$200+" },
-      ],
-    },
-    {
-      icon: <Paintbrush className="h-8 w-8" />,
-      title: "Nail Services",
-      items: [
-        { name: "Classic Manicure", price: "$25" },
-        { name: "Gel Manicure", price: "$40" },
-        { name: "Classic Pedicure", price: "$35" },
-        { name: "Gel Pedicure", price: "$55" },
-        { name: "Nail Art (per nail)", price: "$5+" },
-      ],
-    },
-    {
-      icon: <Sparkles className="h-8 w-8" />,
-      title: "Makeup Services",
-      items: [
-        { name: "Special Event Makeup", price: "$75" },
-        { name: "Bridal Makeup", price: "$150+" },
-        { name: "Makeup Lesson", price: "$80" },
-        { name: "Lash Extensions", price: "$120+" },
-        { name: "Brow Shaping & Tint", price: "$35" },
-      ],
-    },
-    {
-      icon: <Heart className="h-8 w-8" />,
-      title: "Spa Treatments",
-      items: [
-        { name: "Facial Treatment", price: "$65+" },
-        { name: "Waxing Services", price: "$15+" },
-        { name: "Massage Therapy", price: "$80+" },
-        { name: "Body Scrub", price: "$70" },
-      ],
-    },
-  ];
+  const [services, setServices] = useState<Service[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    price: "",
+    category: "",
+    description: "",
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    checkAdminStatus();
+    fetchServices();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const { data } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+
+    setIsAdmin(data || false);
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .order("category", { ascending: true })
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (service: Service) => {
+    setEditingService(service);
+    setFormData({
+      name: service.name,
+      price: service.price.toString(),
+      category: service.category,
+      description: service.description || "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingService) return;
+
+    try {
+      const { error } = await supabase
+        .from("services")
+        .update({
+          name: formData.name,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          description: formData.description || null,
+        })
+        .eq("id", editingService.id);
+
+      if (error) throw error;
+
+      toast({ title: "Service updated successfully" });
+      setEditDialogOpen(false);
+      fetchServices();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (serviceId: string, serviceName: string) => {
+    if (!confirm(`Are you sure you want to delete "${serviceName}"?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from("services")
+        .delete()
+        .eq("id", serviceId);
+
+      if (error) throw error;
+
+      toast({ title: "Service deleted successfully" });
+      fetchServices();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Group services by category
+  const groupedServices = services.reduce((acc, service) => {
+    if (!acc[service.category]) {
+      acc[service.category] = [];
+    }
+    acc[service.category].push(service);
+    return acc;
+  }, {} as Record<string, Service[]>);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="pt-32 pb-20 px-4">
+          <div className="container mx-auto text-center">
+            <p className="text-muted-foreground">Loading services...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,31 +190,64 @@ const Services = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {services.map((category) => (
-              <Card key={category.title} className="border-2 hover:border-primary/50 hover:shadow-[var(--shadow-elegant)] transition-all">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl text-primary-foreground">
-                      {category.icon}
+          {Object.keys(groupedServices).length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No services available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8">
+              {Object.entries(groupedServices).map(([category, categoryServices]) => (
+                <Card key={category} className="border-2 hover:border-primary/50 hover:shadow-[var(--shadow-elegant)] transition-all">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-3 bg-gradient-to-br from-primary to-secondary rounded-xl text-primary-foreground">
+                        {categoryIcons[category] || <Sparkles className="h-8 w-8" />}
+                      </div>
+                      <CardTitle className="text-2xl">{category}</CardTitle>
                     </div>
-                    <CardTitle className="text-2xl">{category.title}</CardTitle>
-                  </div>
-                  <CardDescription>Professional treatments with premium products</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {category.items.map((item) => (
-                      <li key={item.name} className="flex justify-between items-center p-3 rounded-lg hover:bg-muted transition-colors">
-                        <span className="font-medium">{item.name}</span>
-                        <span className="text-primary font-semibold">{item.price}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <CardDescription>Professional treatments with premium products</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {categoryServices.map((service) => (
+                        <li key={service.id} className="flex justify-between items-center p-3 rounded-lg hover:bg-muted transition-colors group">
+                          <div className="flex-1">
+                            <span className="font-medium">{service.name}</span>
+                            {service.description && (
+                              <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-primary font-semibold">${service.price.toFixed(2)}</span>
+                            {isAdmin && (
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => handleEdit(service)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDelete(service.id, service.name)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <div className="mt-12 p-8 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 rounded-2xl text-center border border-border">
             <h3 className="text-2xl font-bold mb-3">Book Your Service Today</h3>
@@ -104,6 +263,64 @@ const Services = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Service</DialogTitle>
+            <DialogDescription>Update the service details below</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Service Name</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-category">Category</Label>
+                <Input
+                  id="edit-category"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-price">Price</Label>
+                <Input
+                  id="edit-price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description (Optional)</Label>
+                <Textarea
+                  id="edit-description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-4">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Update Service</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
