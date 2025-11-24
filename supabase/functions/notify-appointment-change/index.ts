@@ -15,6 +15,41 @@ interface NotificationRequest {
   newEndTime?: string;
 }
 
+// Twilio SMS helper function
+async function sendSMS(to: string, body: string, twilioAccountSid: string, twilioAuthToken: string, twilioPhoneNumber: string) {
+  try {
+    const auth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          To: to,
+          From: twilioPhoneNumber,
+          Body: body,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Twilio SMS error:', error);
+      return { success: false, error };
+    }
+
+    const data = await response.json();
+    console.log('SMS sent successfully:', data.sid);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,6 +59,17 @@ const handler = async (req: Request): Promise<Response> => {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const smsEnabled = !!(twilioAccountSid && twilioAuthToken && twilioPhoneNumber);
+
+    if (smsEnabled) {
+      console.log("SMS notifications enabled via Twilio");
+    } else {
+      console.log("SMS notifications disabled (Twilio credentials not configured)");
     }
 
     const supabaseUrl = Deno.env.get("VITE_SUPABASE_URL")!;
@@ -41,7 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
         status,
         client_id,
         slot:availability_slots(date, start_time, end_time),
-        profile:profiles!appointments_client_id_fkey(email, full_name)
+        profile:profiles!appointments_client_id_fkey(email, full_name, phone)
       `)
       .eq("slot_id", slotId)
       .in("status", ["pending", "confirmed"]);
@@ -59,6 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailPromises = appointments.map(async (appointment: any) => {
       const clientEmail = appointment.profile?.email;
+      const clientPhone = appointment.profile?.phone;
       const clientName = appointment.profile?.full_name || "Valued Client";
       const originalSlot = appointment.slot;
 
@@ -69,6 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       let subject = "";
       let htmlContent = "";
+      let smsBody = "";
 
       if (changeType === "cancelled") {
         subject = "Appointment Cancelled - Paola Beauty Glam";
@@ -85,6 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
           <p>We apologize for any inconvenience this may cause.</p>
           <p>Best regards,<br>Paola Beauty Glam Team</p>
         `;
+        smsBody = `Paola Beauty Glam: Your ${appointment.service_type} appointment on ${originalSlot.date} at ${originalSlot.start_time} has been cancelled. Please contact us to reschedule.`;
       } else {
         subject = "Appointment Time Modified - Paola Beauty Glam";
         htmlContent = `
@@ -105,6 +154,8 @@ const handler = async (req: Request): Promise<Response> => {
           <p>If this new time doesn't work for you, please contact us to reschedule.</p>
           <p>Best regards,<br>Paola Beauty Glam Team</p>
         `;
+        const newTimeInfo = newDate && newStartTime ? `${newDate} at ${newStartTime}` : 'a new time';
+        smsBody = `Paola Beauty Glam: Your ${appointment.service_type} appointment has been rescheduled to ${newTimeInfo}. Original: ${originalSlot.date} at ${originalSlot.start_time}.`;
       }
 
       try {
@@ -130,6 +181,27 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (emailError) {
         console.error(`Failed to send email to ${clientEmail}:`, emailError);
+      }
+
+      // Send SMS if Twilio is configured and client has a phone number
+      if (smsEnabled && clientPhone) {
+        const smsResult = await sendSMS(
+          clientPhone,
+          smsBody,
+          twilioAccountSid!,
+          twilioAuthToken!,
+          twilioPhoneNumber!
+        );
+        
+        if (smsResult.success) {
+          console.log(`SMS sent to ${clientPhone} for appointment ${appointment.id}`);
+        } else {
+          console.error(`Failed to send SMS to ${clientPhone}:`, smsResult.error);
+        }
+      } else if (!smsEnabled) {
+        console.log(`SMS disabled for appointment ${appointment.id}`);
+      } else if (!clientPhone) {
+        console.log(`No phone number for appointment ${appointment.id}`);
       }
     });
 
