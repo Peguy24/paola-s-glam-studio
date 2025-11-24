@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, Plus, Trash2 } from "lucide-react";
+import { Calendar, Clock, Plus, Trash2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
 interface Slot {
@@ -21,6 +22,12 @@ const AvailabilityManager = () => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [newSlot, setNewSlot] = useState({
+    date: "",
+    start_time: "",
+    end_time: "",
+  });
+  const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
+  const [editForm, setEditForm] = useState({
     date: "",
     start_time: "",
     end_time: "",
@@ -138,6 +145,46 @@ const AvailabilityManager = () => {
     fetchSlots();
   };
 
+  const openEditDialog = (slot: Slot) => {
+    setEditingSlot(slot);
+    setEditForm({
+      date: slot.date,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+    });
+  };
+
+  const updateSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlot) return;
+
+    const { error } = await supabase
+      .from("availability_slots")
+      .update({
+        date: editForm.date,
+        start_time: editForm.start_time,
+        end_time: editForm.end_time,
+      })
+      .eq("id", editingSlot.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Slot updated successfully",
+    });
+
+    setEditingSlot(null);
+    fetchSlots();
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-2">
@@ -234,6 +281,13 @@ const AvailabilityManager = () => {
                       {slot.is_available ? "Mark Unavailable" : "Mark Available"}
                     </Button>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(slot)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => deleteSlot(slot.id)}
@@ -247,6 +301,58 @@ const AvailabilityManager = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!editingSlot} onOpenChange={() => setEditingSlot(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Availability Slot</DialogTitle>
+            <DialogDescription>
+              Update the date and time for this availability slot
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={updateSlot} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_date">Date</Label>
+              <Input
+                id="edit_date"
+                type="date"
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                min={format(new Date(), "yyyy-MM-dd")}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_start_time">Start Time</Label>
+              <Input
+                id="edit_start_time"
+                type="time"
+                value={editForm.start_time}
+                onChange={(e) => setEditForm({ ...editForm, start_time: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_end_time">End Time</Label>
+              <Input
+                id="edit_end_time"
+                type="time"
+                value={editForm.end_time}
+                onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                required
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                Update Slot
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setEditingSlot(null)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
