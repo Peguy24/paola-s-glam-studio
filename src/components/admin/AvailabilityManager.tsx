@@ -117,6 +117,17 @@ const AvailabilityManager = () => {
   };
 
   const deleteSlot = async (slotId: string) => {
+    // Notify clients before deleting if there are appointments
+    if (slotAppointments.length > 0) {
+      try {
+        await supabase.functions.invoke("notify-appointment-change", {
+          body: { slotId, changeType: "cancelled" },
+        });
+      } catch (error) {
+        console.error("Failed to send notifications:", error);
+      }
+    }
+
     const { error } = await supabase
       .from("availability_slots")
       .delete()
@@ -133,9 +144,12 @@ const AvailabilityManager = () => {
 
     toast({
       title: "Success",
-      description: "Slot deleted",
+      description: slotAppointments.length > 0 
+        ? "Slot deleted and clients notified" 
+        : "Slot deleted",
     });
 
+    setSlotAppointments([]);
     fetchSlots();
   };
 
@@ -201,6 +215,23 @@ const AvailabilityManager = () => {
     e.preventDefault();
     if (!editingSlot) return;
 
+    // Notify clients if there are appointments
+    if (slotAppointments.length > 0) {
+      try {
+        await supabase.functions.invoke("notify-appointment-change", {
+          body: {
+            slotId: editingSlot.id,
+            changeType: "modified",
+            newDate: editForm.date,
+            newStartTime: editForm.start_time,
+            newEndTime: editForm.end_time,
+          },
+        });
+      } catch (error) {
+        console.error("Failed to send notifications:", error);
+      }
+    }
+
     const { error } = await supabase
       .from("availability_slots")
       .update({
@@ -221,10 +252,13 @@ const AvailabilityManager = () => {
 
     toast({
       title: "Success",
-      description: "Slot updated successfully",
+      description: slotAppointments.length > 0
+        ? "Slot updated and clients notified"
+        : "Slot updated successfully",
     });
 
     setEditingSlot(null);
+    setSlotAppointments([]);
     fetchSlots();
   };
 
