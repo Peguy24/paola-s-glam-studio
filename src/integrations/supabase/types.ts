@@ -69,6 +69,7 @@ export type Database = {
           id: string
           notes: string | null
           reminder_sent: boolean
+          service_id: string | null
           service_type: string
           slot_id: string
           status: string
@@ -80,6 +81,7 @@ export type Database = {
           id?: string
           notes?: string | null
           reminder_sent?: boolean
+          service_id?: string | null
           service_type: string
           slot_id: string
           status?: string
@@ -91,6 +93,7 @@ export type Database = {
           id?: string
           notes?: string | null
           reminder_sent?: boolean
+          service_id?: string | null
           service_type?: string
           slot_id?: string
           status?: string
@@ -102,6 +105,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {

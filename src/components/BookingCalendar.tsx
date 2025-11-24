@@ -17,30 +17,52 @@ interface TimeSlot {
   end_time: string;
 }
 
-const services = [
-  "Haircut & Styling",
-  "Hair Coloring",
-  "Makeup Application",
-  "Manicure & Pedicure",
-  "Facial Treatment",
-  "Waxing",
-  "Eyelash Extensions",
-];
+interface Service {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description: string | null;
+}
 
 const BookingCalendar = () => {
   const [date, setDate] = useState<Date>();
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string>("");
-  const [serviceType, setServiceType] = useState<string>("");
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("");
+  const [services, setServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
   useEffect(() => {
     if (date) {
       fetchAvailableSlots();
     }
   }, [date]);
+
+  const fetchServices = async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .order("category", { ascending: true })
+      .order("name", { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch services",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setServices(data || []);
+  };
 
   const fetchAvailableSlots = async () => {
     if (!date) return;
@@ -66,10 +88,10 @@ const BookingCalendar = () => {
   };
 
   const handleBooking = async () => {
-    if (!selectedSlot || !serviceType) {
+    if (!selectedSlot || !selectedServiceId) {
       toast({
         title: "Missing information",
-        description: "Please select a time slot and service type",
+        description: "Please select a time slot and service",
         variant: "destructive",
       });
       return;
@@ -89,10 +111,13 @@ const BookingCalendar = () => {
       return;
     }
 
+    const selectedService = services.find(s => s.id === selectedServiceId);
+
     const { error } = await supabase.from("appointments").insert({
       client_id: user.id,
       slot_id: selectedSlot,
-      service_type: serviceType,
+      service_id: selectedServiceId,
+      service_type: selectedService?.name || "",
       notes: notes || null,
       status: "pending",
     });
@@ -109,7 +134,7 @@ const BookingCalendar = () => {
         description: "Your appointment has been booked!",
       });
       setSelectedSlot("");
-      setServiceType("");
+      setSelectedServiceId("");
       setNotes("");
       fetchAvailableSlots();
     }
@@ -142,15 +167,18 @@ const BookingCalendar = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Service Type</Label>
-            <Select value={serviceType} onValueChange={setServiceType}>
+            <Label>Service</Label>
+            <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a service" />
               </SelectTrigger>
               <SelectContent>
                 {services.map((service) => (
-                  <SelectItem key={service} value={service}>
-                    {service}
+                  <SelectItem key={service.id} value={service.id}>
+                    <div className="flex justify-between items-center w-full">
+                      <span>{service.name}</span>
+                      <span className="ml-4 text-muted-foreground">${service.price.toFixed(2)}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -193,7 +221,7 @@ const BookingCalendar = () => {
 
           <Button
             onClick={handleBooking}
-            disabled={loading || !selectedSlot || !serviceType}
+            disabled={loading || !selectedSlot || !selectedServiceId}
             className="w-full"
           >
             {loading ? "Booking..." : "Book Appointment"}
