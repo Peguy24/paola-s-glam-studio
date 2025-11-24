@@ -17,6 +17,7 @@ interface Slot {
   start_time: string;
   end_time: string;
   is_available: boolean;
+  capacity: number;
 }
 
 interface Appointment {
@@ -37,12 +38,14 @@ const AvailabilityManager = () => {
     date: "",
     start_time: "",
     end_time: "",
+    capacity: 1,
   });
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
   const [editForm, setEditForm] = useState({
     date: "",
     start_time: "",
     end_time: "",
+    capacity: 1,
   });
   const [duplicatingSlot, setDuplicatingSlot] = useState<Slot | null>(null);
   const [duplicateForm, setDuplicateForm] = useState({
@@ -94,6 +97,7 @@ const AvailabilityManager = () => {
       date: newSlot.date,
       start_time: newSlot.start_time,
       end_time: newSlot.end_time,
+      capacity: newSlot.capacity,
       created_by: user.id,
       is_available: true,
     });
@@ -112,7 +116,7 @@ const AvailabilityManager = () => {
       description: "Availability slot created",
     });
 
-    setNewSlot({ date: "", start_time: "", end_time: "" });
+    setNewSlot({ date: "", start_time: "", end_time: "", capacity: 1 });
     fetchSlots();
   };
 
@@ -208,6 +212,7 @@ const AvailabilityManager = () => {
       date: slot.date,
       start_time: slot.start_time,
       end_time: slot.end_time,
+      capacity: slot.capacity,
     });
   };
 
@@ -238,6 +243,7 @@ const AvailabilityManager = () => {
         date: editForm.date,
         start_time: editForm.start_time,
         end_time: editForm.end_time,
+        capacity: editForm.capacity,
       })
       .eq("id", editingSlot.id);
 
@@ -288,6 +294,7 @@ const AvailabilityManager = () => {
       date: duplicateForm.date,
       start_time: duplicatingSlot.start_time,
       end_time: duplicatingSlot.end_time,
+      capacity: duplicatingSlot.capacity,
       created_by: user.id,
       is_available: true,
     });
@@ -322,7 +329,7 @@ const AvailabilityManager = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={createSlot} className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <Input
@@ -351,6 +358,18 @@ const AvailabilityManager = () => {
                   type="time"
                   value={newSlot.end_time}
                   onChange={(e) => setNewSlot({ ...newSlot, end_time: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={newSlot.capacity}
+                  onChange={(e) => setNewSlot({ ...newSlot, capacity: parseInt(e.target.value) || 1 })}
                   required
                 />
               </div>
@@ -394,6 +413,9 @@ const AvailabilityManager = () => {
                       </div>
                       <Badge variant={slot.is_available ? "default" : "secondary"}>
                         {slot.is_available ? "Available" : "Unavailable"}
+                      </Badge>
+                      <Badge variant="outline">
+                        Capacity: {slot.capacity}
                       </Badge>
                     </div>
                   </div>
@@ -541,6 +563,18 @@ const AvailabilityManager = () => {
                 type="time"
                 value={editForm.end_time}
                 onChange={(e) => setEditForm({ ...editForm, end_time: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_capacity">Capacity</Label>
+              <Input
+                id="edit_capacity"
+                type="number"
+                min="1"
+                max="50"
+                value={editForm.capacity}
+                onChange={(e) => setEditForm({ ...editForm, capacity: parseInt(e.target.value) || 1 })}
                 required
               />
             </div>
