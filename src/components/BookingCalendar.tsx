@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Clock } from "lucide-react";
+import { z } from "zod";
 
 interface TimeSlot {
   id: string;
@@ -26,6 +27,14 @@ interface Service {
   category: string;
   description: string | null;
 }
+
+const bookingSchema = z.object({
+  notes: z
+    .string()
+    .max(500, { message: "Notes must be less than 500 characters" })
+    .optional()
+    .or(z.literal("")),
+});
 
 const BookingCalendar = () => {
   const [date, setDate] = useState<Date>();
@@ -124,6 +133,17 @@ const BookingCalendar = () => {
       toast({
         title: "Missing information",
         description: "Please select a time slot and service",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate notes input
+    const validationResult = bookingSchema.safeParse({ notes });
+    if (!validationResult.success) {
+      toast({
+        title: "Validation error",
+        description: validationResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
@@ -256,7 +276,11 @@ const BookingCalendar = () => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
+              maxLength={500}
             />
+            <p className="text-xs text-muted-foreground">
+              {notes.length}/500 characters
+            </p>
           </div>
 
           <Button
