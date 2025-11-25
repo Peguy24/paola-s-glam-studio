@@ -276,6 +276,9 @@ export type Database = {
       }
       ratings: {
         Row: {
+          admin_responder_id: string | null
+          admin_response: string | null
+          admin_response_at: string | null
           appointment_id: string
           client_id: string
           created_at: string
@@ -286,6 +289,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_responder_id?: string | null
+          admin_response?: string | null
+          admin_response_at?: string | null
           appointment_id: string
           client_id: string
           created_at?: string
@@ -296,6 +302,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_responder_id?: string | null
+          admin_response?: string | null
+          admin_response_at?: string | null
           appointment_id?: string
           client_id?: string
           created_at?: string
@@ -306,6 +315,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ratings_admin_responder_id_fkey"
+            columns: ["admin_responder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ratings_appointment_id_fkey"
             columns: ["appointment_id"]
