@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2 } from "lucide-react";
+import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2, Star } from "lucide-react";
 
 interface Service {
   id: string;
@@ -23,6 +23,8 @@ interface Service {
   price: number;
   category: string;
   description: string | null;
+  avgRating?: number;
+  ratingCount?: number;
 }
 
 const categoryIcons: Record<string, JSX.Element> = {
@@ -78,7 +80,34 @@ const Services = () => {
         .order("name", { ascending: true });
 
       if (error) throw error;
-      setServices(data || []);
+
+      // Fetch ratings for all services
+      const { data: ratingsData } = await supabase
+        .from("ratings")
+        .select("service_id, rating");
+
+      // Calculate average ratings
+      const ratingsMap = new Map<string, { total: number; count: number }>();
+      ratingsData?.forEach((rating) => {
+        if (!rating.service_id) return;
+        const existing = ratingsMap.get(rating.service_id) || { total: 0, count: 0 };
+        ratingsMap.set(rating.service_id, {
+          total: existing.total + rating.rating,
+          count: existing.count + 1,
+        });
+      });
+
+      // Add ratings to services
+      const servicesWithRatings = data?.map((service) => {
+        const ratings = ratingsMap.get(service.id);
+        return {
+          ...service,
+          avgRating: ratings ? ratings.total / ratings.count : undefined,
+          ratingCount: ratings?.count || 0,
+        };
+      });
+
+      setServices(servicesWithRatings || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -212,7 +241,20 @@ const Services = () => {
                       {categoryServices.map((service) => (
                         <li key={service.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 rounded-lg hover:bg-muted transition-colors group">
                           <div className="flex-1">
-                            <span className="font-medium text-sm sm:text-base">{service.name}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-sm sm:text-base">{service.name}</span>
+                              {service.avgRating && service.ratingCount! > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-primary text-primary" />
+                                  <span className="text-xs sm:text-sm font-medium text-primary">
+                                    {service.avgRating.toFixed(1)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({service.ratingCount})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                             {service.description && (
                               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{service.description}</p>
                             )}
