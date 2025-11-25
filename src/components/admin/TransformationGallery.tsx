@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload, UploadCloud, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, UploadCloud, X, Crop } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ImageCropDialog } from "./ImageCropDialog";
 
 interface Transformation {
   id: string;
@@ -60,6 +61,10 @@ export function TransformationGallery() {
     afterImage: File | null;
     displayOrder: number;
   }>>([]);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageUrl, setCropImageUrl] = useState("");
+  const [cropImageType, setCropImageType] = useState<"before" | "after" | null>(null);
+  const [cropItemId, setCropItemId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTransformations();
@@ -236,6 +241,36 @@ export function TransformationGallery() {
     setBulkItems(bulkItems.map(item => 
       item.id === id ? { ...item, ...updates } : item
     ));
+  };
+
+  const handleCropImage = (itemId: string, type: "before" | "after", imageUrl: string) => {
+    setCropItemId(itemId);
+    setCropImageType(type);
+    setCropImageUrl(imageUrl);
+    setCropDialogOpen(true);
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    if (!cropItemId || !cropImageType) return;
+
+    // Convert blob to File
+    const file = new File([croppedBlob], `cropped-${cropImageType}.jpg`, {
+      type: "image/jpeg",
+    });
+
+    // Update the bulk item with the cropped image
+    if (cropImageType === "before") {
+      updateBulkItem(cropItemId, { beforeImage: file });
+    } else {
+      updateBulkItem(cropItemId, { afterImage: file });
+    }
+
+    // Cleanup
+    URL.revokeObjectURL(cropImageUrl);
+    setCropDialogOpen(false);
+    setCropItemId(null);
+    setCropImageType(null);
+    setCropImageUrl("");
   };
 
   const handleBulkUpload = async () => {
@@ -440,6 +475,21 @@ export function TransformationGallery() {
                                       className="w-full h-48 object-cover"
                                     />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() =>
+                                          handleCropImage(
+                                            item.id,
+                                            "before",
+                                            URL.createObjectURL(item.beforeImage!)
+                                          )
+                                        }
+                                      >
+                                        <Crop className="h-4 w-4 mr-2" />
+                                        Crop
+                                      </Button>
                                       <Label
                                         htmlFor={`before-${item.id}`}
                                         className="cursor-pointer"
@@ -509,6 +559,21 @@ export function TransformationGallery() {
                                       className="w-full h-48 object-cover"
                                     />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() =>
+                                          handleCropImage(
+                                            item.id,
+                                            "after",
+                                            URL.createObjectURL(item.afterImage!)
+                                          )
+                                        }
+                                      >
+                                        <Crop className="h-4 w-4 mr-2" />
+                                        Crop
+                                      </Button>
                                       <Label
                                         htmlFor={`after-${item.id}`}
                                         className="cursor-pointer"
@@ -791,6 +856,15 @@ export function TransformationGallery() {
           No transformations yet. Add your first one to get started!
         </div>
       )}
+
+      <ImageCropDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageUrl={cropImageUrl}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+        title={`Crop ${cropImageType === "before" ? "Before" : "After"} Image`}
+      />
     </div>
   );
 }
