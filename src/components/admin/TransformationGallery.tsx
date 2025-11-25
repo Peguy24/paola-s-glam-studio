@@ -432,79 +432,140 @@ export function TransformationGallery() {
                             <div className="space-y-4">
                               <div className="space-y-2">
                                 <Label>Before Image *</Label>
-                                <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary transition-colors">
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      updateBulkItem(item.id, {
-                                        beforeImage: e.target.files?.[0] || null,
-                                      })
-                                    }
-                                    className="hidden"
-                                    id={`before-${item.id}`}
-                                  />
-                                  <Label
-                                    htmlFor={`before-${item.id}`}
-                                    className="cursor-pointer"
-                                  >
-                                    {item.beforeImage ? (
-                                      <div className="space-y-2">
-                                        <div className="text-sm font-medium text-primary">
-                                          {item.beforeImage.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Click to change
-                                        </div>
+                                {item.beforeImage ? (
+                                  <div className="relative group rounded-lg overflow-hidden border-2 border-primary/20">
+                                    <img
+                                      src={URL.createObjectURL(item.beforeImage)}
+                                      alt="Before preview"
+                                      className="w-full h-48 object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <Label
+                                        htmlFor={`before-${item.id}`}
+                                        className="cursor-pointer"
+                                      >
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="secondary"
+                                          asChild
+                                        >
+                                          <span>
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Change
+                                          </span>
+                                        </Button>
+                                      </Label>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() =>
+                                          updateBulkItem(item.id, { beforeImage: null })
+                                        }
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Remove
+                                      </Button>
+                                    </div>
+                                    <div className="absolute top-2 left-2 px-2 py-1 bg-background/90 rounded text-xs font-semibold">
+                                      Before
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                                    <Label
+                                      htmlFor={`before-${item.id}`}
+                                      className="cursor-pointer flex flex-col items-center gap-2"
+                                    >
+                                      <Upload className="h-10 w-10 text-muted-foreground" />
+                                      <div className="text-sm font-medium">Upload Before Image</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Click to select file
                                       </div>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                                        <div className="text-sm text-muted-foreground">
-                                          Click to upload
-                                        </div>
-                                      </div>
-                                    )}
-                                  </Label>
-                                </div>
+                                    </Label>
+                                  </div>
+                                )}
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    updateBulkItem(item.id, {
+                                      beforeImage: e.target.files?.[0] || null,
+                                    })
+                                  }
+                                  className="hidden"
+                                  id={`before-${item.id}`}
+                                />
                               </div>
+                              
                               <div className="space-y-2">
                                 <Label>After Image *</Label>
-                                <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary transition-colors">
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      updateBulkItem(item.id, {
-                                        afterImage: e.target.files?.[0] || null,
-                                      })
-                                    }
-                                    className="hidden"
-                                    id={`after-${item.id}`}
-                                  />
-                                  <Label
-                                    htmlFor={`after-${item.id}`}
-                                    className="cursor-pointer"
-                                  >
-                                    {item.afterImage ? (
-                                      <div className="space-y-2">
-                                        <div className="text-sm font-medium text-primary">
-                                          {item.afterImage.name}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Click to change
-                                        </div>
+                                {item.afterImage ? (
+                                  <div className="relative group rounded-lg overflow-hidden border-2 border-primary">
+                                    <img
+                                      src={URL.createObjectURL(item.afterImage)}
+                                      alt="After preview"
+                                      className="w-full h-48 object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <Label
+                                        htmlFor={`after-${item.id}`}
+                                        className="cursor-pointer"
+                                      >
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="secondary"
+                                          asChild
+                                        >
+                                          <span>
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Change
+                                          </span>
+                                        </Button>
+                                      </Label>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() =>
+                                          updateBulkItem(item.id, { afterImage: null })
+                                        }
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Remove
+                                      </Button>
+                                    </div>
+                                    <div className="absolute top-2 right-2 px-2 py-1 bg-primary text-primary-foreground rounded text-xs font-semibold">
+                                      After
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                                    <Label
+                                      htmlFor={`after-${item.id}`}
+                                      className="cursor-pointer flex flex-col items-center gap-2"
+                                    >
+                                      <Upload className="h-10 w-10 text-muted-foreground" />
+                                      <div className="text-sm font-medium">Upload After Image</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Click to select file
                                       </div>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
-                                        <div className="text-sm text-muted-foreground">
-                                          Click to upload
-                                        </div>
-                                      </div>
-                                    )}
-                                  </Label>
-                                </div>
+                                    </Label>
+                                  </div>
+                                )}
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    updateBulkItem(item.id, {
+                                      afterImage: e.target.files?.[0] || null,
+                                    })
+                                  }
+                                  className="hidden"
+                                  id={`after-${item.id}`}
+                                />
                               </div>
                             </div>
                           </div>
