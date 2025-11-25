@@ -4,20 +4,27 @@ import { Sparkles, Calendar, ShoppingBag, Star, Heart, Loader2 } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
-import hairBefore from "@/assets/gallery/hair-before.jpg";
-import hairAfter from "@/assets/gallery/hair-after.jpg";
-import makeupBefore from "@/assets/gallery/makeup-before.jpg";
-import makeupAfter from "@/assets/gallery/makeup-after.jpg";
-import skincareBefore from "@/assets/gallery/skincare-before.jpg";
-import skincareAfter from "@/assets/gallery/skincare-after.jpg";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 
+interface Transformation {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  before_image_url: string;
+  after_image_url: string;
+  display_order: number;
+}
+
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState<ShopifyProduct[]>([]);
+  const [transformations, setTransformations] = useState<Transformation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transformationsLoading, setTransformationsLoading] = useState(true);
   const addItem = useCartStore(state => state.addItem);
 
   useEffect(() => {
@@ -32,7 +39,25 @@ const Home = () => {
       }
     };
 
+    const loadTransformations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("transformations" as any)
+          .select("*")
+          .order("display_order", { ascending: true })
+          .limit(3);
+
+        if (error) throw error;
+        setTransformations((data as any) || []);
+      } catch (error) {
+        console.error('Error loading transformations:', error);
+      } finally {
+        setTransformationsLoading(false);
+      }
+    };
+
     loadFeaturedProducts();
+    loadTransformations();
   }, []);
 
   const handleAddToCart = (product: ShopifyProduct) => {
@@ -196,101 +221,64 @@ const Home = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Hair Transformation */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 p-1">
-              <div className="bg-background rounded-xl overflow-hidden">
-                <div className="grid grid-cols-2">
-                  <div className="relative">
-                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
-                      Before
-                    </div>
-                    <img
-                      src={hairBefore}
-                      alt="Hair before transformation"
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-primary/90 text-primary-foreground rounded-full text-xs font-semibold">
-                      After
-                    </div>
-                    <img
-                      src={hairAfter}
-                      alt="Hair after transformation"
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">Hair Styling</h3>
-                  <p className="text-sm text-muted-foreground">Glamorous volume & styling</p>
-                </div>
+            {transformationsLoading ? (
+              <div className="col-span-full text-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
               </div>
-            </div>
-
-            {/* Makeup Transformation */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/10 to-accent/10 p-1">
-              <div className="bg-background rounded-xl overflow-hidden">
-                <div className="grid grid-cols-2">
-                  <div className="relative">
-                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
-                      Before
-                    </div>
-                    <img
-                      src={makeupBefore}
-                      alt="Makeup before transformation"
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-secondary/90 text-primary-foreground rounded-full text-xs font-semibold">
-                      After
-                    </div>
-                    <img
-                      src={makeupAfter}
-                      alt="Makeup after transformation"
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">Makeup Artistry</h3>
-                  <p className="text-sm text-muted-foreground">Professional glam makeup</p>
-                </div>
+            ) : transformations.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                No transformations to display yet.
               </div>
-            </div>
-
-            {/* Skincare Transformation */}
-            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-1">
-              <div className="bg-background rounded-xl overflow-hidden">
-                <div className="grid grid-cols-2">
-                  <div className="relative">
-                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
-                      Before
+            ) : (
+              transformations.map((transformation, index) => {
+                const gradientClasses = [
+                  "from-primary/10 to-secondary/10",
+                  "from-secondary/10 to-accent/10",
+                  "from-accent/10 to-primary/10"
+                ];
+                const badgeClasses = [
+                  "bg-primary/90 text-primary-foreground",
+                  "bg-secondary/90 text-primary-foreground",
+                  "bg-accent/90 text-primary-foreground"
+                ];
+                
+                return (
+                  <div 
+                    key={transformation.id} 
+                    className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientClasses[index % 3]} p-1`}
+                  >
+                    <div className="bg-background rounded-xl overflow-hidden">
+                      <div className="grid grid-cols-2">
+                        <div className="relative">
+                          <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
+                            Before
+                          </div>
+                          <img
+                            src={transformation.before_image_url}
+                            alt={`${transformation.title} before`}
+                            className="w-full h-64 object-cover"
+                          />
+                        </div>
+                        <div className="relative">
+                          <div className={`absolute top-2 right-2 z-10 px-3 py-1 ${badgeClasses[index % 3]} rounded-full text-xs font-semibold`}>
+                            After
+                          </div>
+                          <img
+                            src={transformation.after_image_url}
+                            alt={`${transformation.title} after`}
+                            className="w-full h-64 object-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-lg mb-1">{transformation.title}</h3>
+                        <p className="text-sm text-muted-foreground">{transformation.description}</p>
+                      </div>
                     </div>
-                    <img
-                      src={skincareBefore}
-                      alt="Skincare before transformation"
-                      className="w-full h-64 object-cover"
-                    />
                   </div>
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-accent/90 text-primary-foreground rounded-full text-xs font-semibold">
-                      After
-                    </div>
-                    <img
-                      src={skincareAfter}
-                      alt="Skincare after transformation"
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-1">Skincare Treatment</h3>
-                  <p className="text-sm text-muted-foreground">Radiant glowing skin</p>
-                </div>
-              </div>
-            </div>
+                );
+              })
+            )}
           </div>
 
           <div className="text-center mt-12">

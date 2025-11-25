@@ -13,9 +13,10 @@ import NotificationHistory from "@/components/admin/NotificationHistory";
 import { ServiceManagement } from "@/components/admin/ServiceManagement";
 import { ServiceAnalytics } from "@/components/admin/ServiceAnalytics";
 import RecurringPatterns from "@/components/admin/RecurringPatterns";
+import { TransformationGallery } from "@/components/admin/TransformationGallery";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart } from "lucide-react";
+import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image } from "lucide-react";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -96,7 +97,7 @@ const Admin = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Desktop: Horizontal Tab List */}
             {!isMobile && (
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 gap-1">
                 <TabsTrigger value="appointments" className="text-sm">
                   <Calendar className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Appointments
@@ -112,6 +113,10 @@ const Admin = () => {
                 <TabsTrigger value="services" className="text-sm">
                   <Package className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Services
+                </TabsTrigger>
+                <TabsTrigger value="gallery" className="text-sm">
+                  <Image className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Gallery
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="text-sm">
                   <BarChart className="h-4 w-4 mr-1.5 hidden lg:inline" />
@@ -167,6 +172,12 @@ const Admin = () => {
                         <span>Services</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="gallery">
+                      <div className="flex items-center gap-2">
+                        <Image className="h-4 w-4" />
+                        <span>Gallery</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="analytics">
                       <div className="flex items-center gap-2">
                         <BarChart className="h-4 w-4" />
@@ -210,6 +221,10 @@ const Admin = () => {
 
             <TabsContent value="services">
               <ServiceManagement />
+            </TabsContent>
+
+            <TabsContent value="gallery">
+              <TransformationGallery />
             </TabsContent>
 
             <TabsContent value="analytics">

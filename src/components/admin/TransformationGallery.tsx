@@ -57,12 +57,12 @@ export function TransformationGallery() {
   const fetchTransformations = async () => {
     try {
       const { data, error } = await supabase
-        .from("transformations")
+        .from("transformations" as any)
         .select("*")
         .order("display_order", { ascending: true });
 
       if (error) throw error;
-      setTransformations(data || []);
+      setTransformations((data as any) || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -80,14 +80,14 @@ export function TransformationGallery() {
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("transformations")
+      .from("transformations" as any)
       .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     const {
       data: { publicUrl },
-    } = supabase.storage.from("transformations").getPublicUrl(filePath);
+    } = supabase.storage.from("transformations" as any).getPublicUrl(filePath);
 
     return publicUrl;
   };
@@ -128,16 +128,16 @@ export function TransformationGallery() {
 
       if (editingId) {
         const { error } = await supabase
-          .from("transformations")
-          .update(transformationData)
+          .from("transformations" as any)
+          .update(transformationData as any)
           .eq("id", editingId);
 
         if (error) throw error;
         toast({ title: "Transformation updated successfully" });
       } else {
         const { error } = await supabase
-          .from("transformations")
-          .insert([transformationData]);
+          .from("transformations" as any)
+          .insert([transformationData as any]);
 
         if (error) throw error;
         toast({ title: "Transformation created successfully" });
@@ -161,7 +161,7 @@ export function TransformationGallery() {
     if (!confirm("Are you sure you want to delete this transformation?")) return;
 
     try {
-      const { error } = await supabase.from("transformations").delete().eq("id", id);
+      const { error } = await supabase.from("transformations" as any).delete().eq("id", id);
 
       if (error) throw error;
       toast({ title: "Transformation deleted successfully" });
