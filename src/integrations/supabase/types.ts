@@ -354,6 +354,42 @@ export type Database = {
         }
         Relationships: []
       }
+      transformations: {
+        Row: {
+          after_image_url: string
+          before_image_url: string
+          category: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          after_image_url: string
+          before_image_url: string
+          category: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          after_image_url?: string
+          before_image_url?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
