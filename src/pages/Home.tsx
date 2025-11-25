@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
+import brandPhoto from "@/assets/brand-photo.jpeg";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
@@ -192,7 +193,7 @@ const Home = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-accent/20 rounded-3xl blur-2xl" />
               <img
-                src={logo}
+                src={brandPhoto}
                 alt="Paola Beauty Glam Story"
                 className="relative rounded-3xl w-full object-cover shadow-2xl ring-1 ring-border"
               />
