@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
+import hairBefore from "@/assets/gallery/hair-before.jpg";
+import hairAfter from "@/assets/gallery/hair-after.jpg";
+import makeupBefore from "@/assets/gallery/makeup-before.jpg";
+import makeupAfter from "@/assets/gallery/makeup-after.jpg";
+import skincareBefore from "@/assets/gallery/skincare-before.jpg";
+import skincareAfter from "@/assets/gallery/skincare-after.jpg";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
@@ -166,6 +172,134 @@ const Home = () => {
                 className="relative rounded-3xl w-full object-cover shadow-2xl ring-1 ring-border"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Transformations Gallery */}
+      <section className="py-20 px-4 bg-gradient-to-b from-secondary/5 to-background">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
+              <Sparkles className="h-4 w-4" />
+              Our Transformations
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              See The{" "}
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                Magic Happen
+              </span>
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              Real results from our expert beauty services
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Hair Transformation */}
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 p-1">
+              <div className="bg-background rounded-xl overflow-hidden">
+                <div className="grid grid-cols-2">
+                  <div className="relative">
+                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
+                      Before
+                    </div>
+                    <img
+                      src={hairBefore}
+                      alt="Hair before transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-primary/90 text-primary-foreground rounded-full text-xs font-semibold">
+                      After
+                    </div>
+                    <img
+                      src={hairAfter}
+                      alt="Hair after transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1">Hair Styling</h3>
+                  <p className="text-sm text-muted-foreground">Glamorous volume & styling</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Makeup Transformation */}
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/10 to-accent/10 p-1">
+              <div className="bg-background rounded-xl overflow-hidden">
+                <div className="grid grid-cols-2">
+                  <div className="relative">
+                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
+                      Before
+                    </div>
+                    <img
+                      src={makeupBefore}
+                      alt="Makeup before transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-secondary/90 text-primary-foreground rounded-full text-xs font-semibold">
+                      After
+                    </div>
+                    <img
+                      src={makeupAfter}
+                      alt="Makeup after transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1">Makeup Artistry</h3>
+                  <p className="text-sm text-muted-foreground">Professional glam makeup</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Skincare Transformation */}
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 p-1">
+              <div className="bg-background rounded-xl overflow-hidden">
+                <div className="grid grid-cols-2">
+                  <div className="relative">
+                    <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
+                      Before
+                    </div>
+                    <img
+                      src={skincareBefore}
+                      alt="Skincare before transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute top-2 right-2 z-10 px-3 py-1 bg-accent/90 text-primary-foreground rounded-full text-xs font-semibold">
+                      After
+                    </div>
+                    <img
+                      src={skincareAfter}
+                      alt="Skincare after transformation"
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-1">Skincare Treatment</h3>
+                  <p className="text-sm text-muted-foreground">Radiant glowing skin</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Link to="/services">
+              <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)]">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Explore Our Services
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
