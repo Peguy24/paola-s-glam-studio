@@ -15,9 +15,10 @@ import { ServiceAnalytics } from "@/components/admin/ServiceAnalytics";
 import RecurringPatterns from "@/components/admin/RecurringPatterns";
 import { TransformationGallery } from "@/components/admin/TransformationGallery";
 import { ContactMessages } from "@/components/admin/ContactMessages";
+import { RatingsManagement } from "@/components/admin/RatingsManagement";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail } from "lucide-react";
+import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star } from "lucide-react";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -98,7 +99,7 @@ const Admin = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Desktop: Horizontal Tab List */}
             {!isMobile && (
-              <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 gap-1">
+              <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 gap-1">
                 <TabsTrigger value="appointments" className="text-sm">
                   <Calendar className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Appointments
@@ -122,6 +123,10 @@ const Admin = () => {
                 <TabsTrigger value="messages" className="text-sm">
                   <Mail className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Messages
+                </TabsTrigger>
+                <TabsTrigger value="ratings" className="text-sm">
+                  <Star className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Ratings
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="text-sm">
                   <BarChart className="h-4 w-4 mr-1.5 hidden lg:inline" />
@@ -189,6 +194,12 @@ const Admin = () => {
                         <span>Messages</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="ratings">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        <span>Ratings</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="analytics">
                       <div className="flex items-center gap-2">
                         <BarChart className="h-4 w-4" />
@@ -240,6 +251,10 @@ const Admin = () => {
 
             <TabsContent value="messages">
               <ContactMessages />
+            </TabsContent>
+
+            <TabsContent value="ratings">
+              <RatingsManagement />
             </TabsContent>
 
             <TabsContent value="analytics">
