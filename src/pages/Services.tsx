@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2, Star } from "lucide-react";
+import { ServiceRatings } from "@/components/ServiceRatings";
 
 interface Service {
   id: string;
@@ -46,6 +47,8 @@ const Services = () => {
     category: "",
     description: "",
   });
+  const [selectedServiceForReviews, setSelectedServiceForReviews] = useState<string | null>(null);
+  const [reviewsDialogOpen, setReviewsDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -189,7 +192,14 @@ const Services = () => {
     }
     acc[service.category].push(service);
     return acc;
-  }, {} as Record<string, Service[]>);
+    }, {} as Record<string, Service[]>);
+
+  const handleViewReviews = (serviceId: string) => {
+    setSelectedServiceForReviews(serviceId);
+    setReviewsDialogOpen(true);
+  };
+
+  const selectedService = services.find(s => s.id === selectedServiceForReviews);
 
   if (loading) {
     return (
@@ -244,7 +254,10 @@ const Services = () => {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium text-sm sm:text-base">{service.name}</span>
                               {service.avgRating && service.ratingCount! > 0 && (
-                                <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleViewReviews(service.id)}
+                                  className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                                >
                                   <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-primary text-primary" />
                                   <span className="text-xs sm:text-sm font-medium text-primary">
                                     {service.avgRating.toFixed(1)}
@@ -252,7 +265,7 @@ const Services = () => {
                                   <span className="text-xs text-muted-foreground">
                                     ({service.ratingCount})
                                   </span>
-                                </div>
+                                </button>
                               )}
                             </div>
                             {service.description && (
@@ -361,6 +374,24 @@ const Services = () => {
               <Button type="submit">Update Service</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reviews Dialog */}
+      <Dialog open={reviewsDialogOpen} onOpenChange={setReviewsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Reviews for {selectedService?.name}</DialogTitle>
+            <DialogDescription>
+              Read what our customers have to say about this service
+            </DialogDescription>
+          </DialogHeader>
+          {selectedServiceForReviews && selectedService && (
+            <ServiceRatings 
+              serviceId={selectedServiceForReviews} 
+              serviceName={selectedService.name}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

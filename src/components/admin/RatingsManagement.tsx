@@ -28,14 +28,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Star, Trash2, Eye } from "lucide-react";
+import { Star, Trash2, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Rating {
   id: string;
   rating: number;
   review: string | null;
+  admin_response: string | null;
+  admin_response_at: string | null;
   created_at: string;
   updated_at: string;
   client: {
@@ -58,6 +61,7 @@ export function RatingsManagement() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ratingToDelete, setRatingToDelete] = useState<string | null>(null);
+  const [adminResponse, setAdminResponse] = useState("");
 
   useEffect(() => {
     fetchRatings();
@@ -72,6 +76,8 @@ export function RatingsManagement() {
           id,
           rating,
           review,
+          admin_response,
+          admin_response_at,
           created_at,
           updated_at,
           client:profiles!ratings_client_id_fkey(full_name, email),
@@ -92,7 +98,34 @@ export function RatingsManagement() {
 
   const handleViewRating = (rating: Rating) => {
     setSelectedRating(rating);
+    setAdminResponse(rating.admin_response || "");
     setViewDialogOpen(true);
+  };
+
+  const handleSaveResponse = async () => {
+    if (!selectedRating) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from("ratings")
+        .update({
+          admin_response: adminResponse || null,
+          admin_response_at: adminResponse ? new Date().toISOString() : null,
+          admin_responder_id: adminResponse ? user?.id : null,
+        })
+        .eq("id", selectedRating.id);
+
+      if (error) throw error;
+
+      toast.success("Response saved successfully");
+      fetchRatings();
+      setViewDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving response:", error);
+      toast.error("Failed to save response");
+    }
   };
 
   const handleDeleteClick = (ratingId: string) => {
@@ -164,6 +197,7 @@ export function RatingsManagement() {
                 <TableHead>Service</TableHead>
                 <TableHead>Rating</TableHead>
                 <TableHead>Review</TableHead>
+                <TableHead>Response</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -171,7 +205,7 @@ export function RatingsManagement() {
             <TableBody>
               {ratings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     No ratings found
                   </TableCell>
                 </TableRow>
@@ -207,19 +241,29 @@ export function RatingsManagement() {
                       )}
                     </TableCell>
                     <TableCell>
+                      {rating.admin_response ? (
+                        <div className="flex items-center gap-1 text-primary">
+                          <MessageSquare className="h-3 w-3" />
+                          <span className="text-xs">Replied</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          No response
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {new Date(rating.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {rating.review && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewRating(rating)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewRating(rating)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -239,11 +283,11 @@ export function RatingsManagement() {
 
       {/* View Rating Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Rating Details</DialogTitle>
+            <DialogTitle>Rating Details & Response</DialogTitle>
             <DialogDescription>
-              Full review and rating information
+              View review and add or edit your response
             </DialogDescription>
           </DialogHeader>
           {selectedRating && (
@@ -275,14 +319,32 @@ export function RatingsManagement() {
                   {new Date(selectedRating.created_at).toLocaleString()}
                 </p>
               </div>
+              
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium">Admin Response</label>
+                {selectedRating.admin_response_at && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Last updated: {new Date(selectedRating.admin_response_at).toLocaleString()}
+                  </p>
+                )}
+                <Textarea
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  placeholder="Write your response to this review..."
+                  className="mt-2 min-h-[100px]"
+                />
+              </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setViewDialogOpen(false)}
             >
-              Close
+              Cancel
+            </Button>
+            <Button onClick={handleSaveResponse}>
+              Save Response
             </Button>
             {selectedRating && (
               <Button
