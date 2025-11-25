@@ -361,26 +361,26 @@ export function TransformationGallery() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6 px-4 md:px-0">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Transformation Gallery</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl md:text-2xl font-bold">Transformation Gallery</h2>
+          <p className="text-sm md:text-base text-muted-foreground">
             Manage your before/after transformation showcase
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Dialog open={bulkDialogOpen} onOpenChange={(open) => {
             setBulkDialogOpen(open);
             if (!open) setBulkItems([]);
           }}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="flex-1 md:flex-none text-sm">
                 <UploadCloud className="mr-2 h-4 w-4" />
                 Bulk Upload
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle>Bulk Upload Transformations</DialogTitle>
                 <DialogDescription>
@@ -676,12 +676,12 @@ export function TransformationGallery() {
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="flex-1 md:flex-none text-sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Single
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingId ? "Edit Transformation" : "Add New Transformation"}
@@ -796,12 +796,12 @@ export function TransformationGallery() {
       </div>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {transformations.map((transformation) => (
           <Card key={transformation.id}>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-2">{transformation.title}</h3>
-              <p className="text-sm text-muted-foreground mb-3">
+            <CardContent className="p-3 md:p-4">
+              <h3 className="text-sm md:text-base font-semibold mb-2">{transformation.title}</h3>
+              <p className="text-xs md:text-sm text-muted-foreground mb-3 line-clamp-2">
                 {transformation.description}
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -810,7 +810,7 @@ export function TransformationGallery() {
                   <img
                     src={transformation.before_image_url}
                     alt="Before"
-                    className="w-full h-32 object-cover rounded"
+                    className="w-full h-28 md:h-32 object-cover rounded"
                   />
                 </div>
                 <div>
@@ -818,7 +818,7 @@ export function TransformationGallery() {
                   <img
                     src={transformation.after_image_url}
                     alt="After"
-                    className="w-full h-32 object-cover rounded"
+                    className="w-full h-28 md:h-32 object-cover rounded"
                   />
                 </div>
               </div>
@@ -827,23 +827,23 @@ export function TransformationGallery() {
                 <span>Order: {transformation.display_order}</span>
               </div>
             </CardContent>
-            <CardFooter className="p-4 pt-0 flex gap-2">
+            <CardFooter className="p-3 md:p-4 pt-0 flex flex-col md:flex-row gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleEdit(transformation)}
-                className="flex-1"
+                className="flex-1 w-full text-xs md:text-sm"
               >
-                <Pencil className="mr-2 h-4 w-4" />
+                <Pencil className="mr-2 h-3 w-3 md:h-4 md:w-4" />
                 Edit
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => handleDelete(transformation.id)}
-                className="flex-1"
+                className="flex-1 w-full text-xs md:text-sm"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="mr-2 h-3 w-3 md:h-4 md:w-4" />
                 Delete
               </Button>
             </CardFooter>
