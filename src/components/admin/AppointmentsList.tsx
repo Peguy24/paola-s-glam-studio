@@ -137,6 +137,19 @@ const AppointmentsList = () => {
       return;
     }
 
+    // Send review reminder when appointment is marked as completed
+    if (newStatus === "completed") {
+      try {
+        await supabase.functions.invoke("send-review-reminder", {
+          body: { appointmentId },
+        });
+        console.log("Review reminder sent for appointment:", appointmentId);
+      } catch (error) {
+        console.error("Failed to send review reminder:", error);
+        // Don't show error to admin - reminder is sent in background
+      }
+    }
+
     toast({
       title: "Success",
       description: "Appointment status updated",
