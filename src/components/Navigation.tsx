@@ -61,6 +61,9 @@ const Navigation = () => {
             <Link to="/products" className="text-foreground hover:text-primary transition-colors font-medium">
               Shop Products
             </Link>
+            <Link to="/contact" className="text-foreground hover:text-primary transition-colors font-medium">
+              Contact
+            </Link>
             {isLoggedIn && (
               <Link to="/profile" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
                 <User className="h-4 w-4" />
@@ -114,6 +117,13 @@ const Navigation = () => {
               className="block text-foreground hover:text-primary transition-colors font-medium"
             >
               Shop Products
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setIsOpen(false)}
+              className="block text-foreground hover:text-primary transition-colors font-medium"
+            >
+              Contact
             </Link>
             {isLoggedIn && (
               <Link
