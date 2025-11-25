@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, UploadCloud, X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Transformation {
   id: string;
@@ -49,6 +50,16 @@ export function TransformationGallery() {
   const [beforeImage, setBeforeImage] = useState<File | null>(null);
   const [afterImage, setAfterImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkItems, setBulkItems] = useState<Array<{
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    beforeImage: File | null;
+    afterImage: File | null;
+    displayOrder: number;
+  }>>([]);
 
   useEffect(() => {
     fetchTransformations();
@@ -198,6 +209,118 @@ export function TransformationGallery() {
     setAfterImage(null);
   };
 
+  const addBulkItem = () => {
+    const maxOrder = transformations.length > 0
+      ? Math.max(...transformations.map(t => t.display_order))
+      : 0;
+    
+    setBulkItems([
+      ...bulkItems,
+      {
+        id: Date.now().toString(),
+        title: "",
+        description: "",
+        category: "hair",
+        beforeImage: null,
+        afterImage: null,
+        displayOrder: maxOrder + bulkItems.length + 1,
+      },
+    ]);
+  };
+
+  const removeBulkItem = (id: string) => {
+    setBulkItems(bulkItems.filter(item => item.id !== id));
+  };
+
+  const updateBulkItem = (id: string, updates: Partial<typeof bulkItems[0]>) => {
+    setBulkItems(bulkItems.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
+  };
+
+  const handleBulkUpload = async () => {
+    if (bulkItems.length === 0) {
+      toast({
+        title: "No items to upload",
+        description: "Please add at least one transformation pair.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const invalidItems = bulkItems.filter(
+      item => !item.title || !item.beforeImage || !item.afterImage
+    );
+
+    if (invalidItems.length > 0) {
+      toast({
+        title: "Missing required fields",
+        description: "Each item must have a title, before image, and after image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const item of bulkItems) {
+        try {
+          const beforeImageUrl = await uploadImage(item.beforeImage!, "before");
+          const afterImageUrl = await uploadImage(item.afterImage!, "after");
+
+          const { error } = await supabase
+            .from("transformations" as any)
+            .insert([{
+              title: item.title,
+              description: item.description || null,
+              category: item.category,
+              before_image_url: beforeImageUrl,
+              after_image_url: afterImageUrl,
+              display_order: item.displayOrder,
+            } as any]);
+
+          if (error) throw error;
+          successCount++;
+        } catch (error) {
+          console.error(`Error uploading item ${item.title}:`, error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Bulk upload complete",
+          description: `Successfully uploaded ${successCount} transformation${successCount > 1 ? 's' : ''}${failCount > 0 ? `, ${failCount} failed` : ''}.`,
+        });
+      }
+
+      if (failCount === bulkItems.length) {
+        toast({
+          title: "Upload failed",
+          description: "All items failed to upload. Please try again.",
+          variant: "destructive",
+        });
+      }
+
+      if (successCount > 0) {
+        setBulkDialogOpen(false);
+        setBulkItems([]);
+        fetchTransformations();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading transformations...</div>;
   }
@@ -211,16 +334,227 @@ export function TransformationGallery() {
             Manage your before/after transformation showcase
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Transformation
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={bulkDialogOpen} onOpenChange={(open) => {
+            setBulkDialogOpen(open);
+            if (!open) setBulkItems([]);
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <UploadCloud className="mr-2 h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Bulk Upload Transformations</DialogTitle>
+                <DialogDescription>
+                  Upload multiple before/after pairs at once
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="flex-1 pr-4">
+                <div className="space-y-4 pb-4">
+                  {bulkItems.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No items added yet. Click "Add Item" to start.
+                    </div>
+                  ) : (
+                    bulkItems.map((item, index) => (
+                      <Card key={item.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <h4 className="font-semibold">Item #{index + 1}</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBulkItem(item.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Title *</Label>
+                                <Input
+                                  value={item.title}
+                                  onChange={(e) =>
+                                    updateBulkItem(item.id, { title: e.target.value })
+                                  }
+                                  placeholder="e.g., Hair Styling"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea
+                                  value={item.description}
+                                  onChange={(e) =>
+                                    updateBulkItem(item.id, { description: e.target.value })
+                                  }
+                                  placeholder="Brief description"
+                                  rows={2}
+                                />
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-2">
+                                  <Label>Category</Label>
+                                  <Select
+                                    value={item.category}
+                                    onValueChange={(value) =>
+                                      updateBulkItem(item.id, { category: value })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="hair">Hair</SelectItem>
+                                      <SelectItem value="makeup">Makeup</SelectItem>
+                                      <SelectItem value="skincare">Skincare</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Order</Label>
+                                  <Input
+                                    type="number"
+                                    value={item.displayOrder}
+                                    onChange={(e) =>
+                                      updateBulkItem(item.id, {
+                                        displayOrder: parseInt(e.target.value),
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Before Image *</Label>
+                                <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary transition-colors">
+                                  <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                      updateBulkItem(item.id, {
+                                        beforeImage: e.target.files?.[0] || null,
+                                      })
+                                    }
+                                    className="hidden"
+                                    id={`before-${item.id}`}
+                                  />
+                                  <Label
+                                    htmlFor={`before-${item.id}`}
+                                    className="cursor-pointer"
+                                  >
+                                    {item.beforeImage ? (
+                                      <div className="space-y-2">
+                                        <div className="text-sm font-medium text-primary">
+                                          {item.beforeImage.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Click to change
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                                        <div className="text-sm text-muted-foreground">
+                                          Click to upload
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Label>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>After Image *</Label>
+                                <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary transition-colors">
+                                  <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                      updateBulkItem(item.id, {
+                                        afterImage: e.target.files?.[0] || null,
+                                      })
+                                    }
+                                    className="hidden"
+                                    id={`after-${item.id}`}
+                                  />
+                                  <Label
+                                    htmlFor={`after-${item.id}`}
+                                    className="cursor-pointer"
+                                  >
+                                    {item.afterImage ? (
+                                      <div className="space-y-2">
+                                        <div className="text-sm font-medium text-primary">
+                                          {item.afterImage.name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Click to change
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                                        <div className="text-sm text-muted-foreground">
+                                          Click to upload
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="flex justify-between items-center pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addBulkItem}
+                  disabled={uploading}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setBulkDialogOpen(false)}
+                    disabled={uploading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleBulkUpload}
+                    disabled={uploading || bulkItems.length === 0}
+                  >
+                    {uploading ? "Uploading..." : `Upload ${bulkItems.length} Item${bulkItems.length !== 1 ? 's' : ''}`}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Single
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -334,8 +668,9 @@ export function TransformationGallery() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {transformations.map((transformation) => (
           <Card key={transformation.id}>
             <CardContent className="p-4">
