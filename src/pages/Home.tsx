@@ -1,10 +1,53 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Calendar, ShoppingBag, Star } from "lucide-react";
+import { Sparkles, Calendar, ShoppingBag, Star, Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
+import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
+import { toast } from "sonner";
 
 const Home = () => {
+  const [featuredProducts, setFeaturedProducts] = useState<ShopifyProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const addItem = useCartStore(state => state.addItem);
+
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      try {
+        const products = await fetchProducts(3);
+        setFeaturedProducts(products);
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeaturedProducts();
+  }, []);
+
+  const handleAddToCart = (product: ShopifyProduct) => {
+    const variant = product.node.variants.edges[0]?.node;
+    if (!variant) return;
+
+    const cartItem = {
+      product,
+      variantId: variant.id,
+      variantTitle: variant.title,
+      price: variant.price,
+      quantity: 1,
+      selectedOptions: variant.selectedOptions
+    };
+
+    addItem(cartItem);
+    toast.success("Added to cart", {
+      description: `${product.node.title} has been added to your cart.`,
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -79,39 +122,128 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Services Preview */}
+      {/* Brand Story */}
+      <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/5">
+        <div className="container mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm font-medium text-accent">
+                <Heart className="h-4 w-4" />
+                Our Story
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+                Where Beauty Meets{" "}
+                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                  Artistry
+                </span>
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                At Paola Beauty Glam, we believe that beauty is not just about looking good—it's about feeling confident and empowered. Founded with a passion for luxury beauty and self-care, we curate premium products and services that celebrate individuality.
+              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Our expert team combines years of experience with the latest trends and techniques to bring you transformative beauty experiences. From our carefully selected product line to our personalized services, every detail is designed with you in mind.
+              </p>
+              <div className="flex items-center gap-8 pt-4">
+                <div>
+                  <div className="text-3xl font-bold text-primary">500+</div>
+                  <div className="text-sm text-muted-foreground">Happy Clients</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-secondary">5+</div>
+                  <div className="text-sm text-muted-foreground">Years Experience</div>
+                </div>
+                <div>
+                  <div className="text-3xl font-bold text-accent">100%</div>
+                  <div className="text-sm text-muted-foreground">Premium Quality</div>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-accent/20 rounded-3xl blur-2xl" />
+              <img
+                src={logo}
+                alt="Paola Beauty Glam Story"
+                className="relative rounded-3xl w-full object-cover shadow-2xl ring-1 ring-border"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products */}
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Signature Services</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Featured Products</h2>
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-              Indulge in our premium beauty treatments designed to make you feel extraordinary
+              Discover our handpicked selection of premium beauty essentials
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { title: "Hair Styling", emoji: "💇‍♀️", desc: "Expert cuts, colors, and treatments" },
-              { title: "Nail Artistry", emoji: "💅", desc: "Manicures, pedicures, and nail art" },
-              { title: "Makeup", emoji: "💄", desc: "Professional makeup for any occasion" },
-            ].map((service) => (
-              <div
-                key={service.title}
-                className="group p-8 bg-card rounded-2xl border border-border hover:border-primary/50 hover:shadow-[var(--shadow-elegant)] transition-all"
-              >
-                <div className="text-5xl mb-4">{service.emoji}</div>
-                <h3 className="text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
-                  {service.title}
-                </h3>
-                <p className="text-muted-foreground">{service.desc}</p>
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No featured products available yet</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {featuredProducts.map((product) => {
+                const image = product.node.images?.edges?.[0]?.node;
+                const price = product.node.priceRange.minVariantPrice;
+                
+                return (
+                  <Card key={product.node.id} className="overflow-hidden hover:shadow-[var(--shadow-elegant)] transition-all border-border/50">
+                    <Link to={`/product/${product.node.handle}`}>
+                      <CardContent className="p-0">
+                        {image ? (
+                          <img
+                            src={image.url}
+                            alt={image.altText || product.node.title}
+                            className="w-full h-72 object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-72 bg-secondary/20 flex items-center justify-center">
+                            <ShoppingBag className="h-16 w-16 text-muted-foreground" />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Link>
+                    <CardFooter className="flex flex-col items-start gap-3 p-6">
+                      <div className="w-full">
+                        <Link to={`/product/${product.node.handle}`}>
+                          <h3 className="font-semibold text-xl hover:text-primary transition-colors">
+                            {product.node.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {product.node.description}
+                        </p>
+                        <p className="text-2xl font-bold text-primary mt-2">
+                          {price.currencyCode} {parseFloat(price.amount).toFixed(2)}
+                        </p>
+                      </div>
+                      <Button
+                        className="w-full"
+                        onClick={() => handleAddToCart(product)}
+                      >
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        Add to Cart
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
           
           <div className="text-center mt-12">
-            <Link to="/services">
+            <Link to="/products">
               <Button size="lg" variant="outline" className="border-2">
-                View All Services
+                View All Products
               </Button>
             </Link>
           </div>
