@@ -274,6 +274,61 @@ export type Database = {
         }
         Relationships: []
       }
+      ratings: {
+        Row: {
+          appointment_id: string
+          client_id: string
+          created_at: string
+          id: string
+          rating: number
+          review: string | null
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id: string
+          client_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          review?: string | null
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          review?: string | null
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_patterns: {
         Row: {
           capacity: number
