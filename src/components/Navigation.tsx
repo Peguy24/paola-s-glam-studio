@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Menu, X, Sparkles, Shield, User } from "lucide-react";
+import { Menu, X, Sparkles, Shield, User, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CartDrawer } from "./CartDrawer";
@@ -64,6 +64,10 @@ const Navigation = () => {
             <Link to="/contact" className="text-foreground hover:text-primary transition-colors font-medium">
               Contact
             </Link>
+            <Link to="/reviews" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+              <Star className="h-4 w-4" />
+              Reviews
+            </Link>
             {isLoggedIn && (
               <Link to="/profile" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
                 <User className="h-4 w-4" />
@@ -124,6 +128,14 @@ const Navigation = () => {
               className="block text-foreground hover:text-primary transition-colors font-medium"
             >
               Contact
+            </Link>
+            <Link
+              to="/reviews"
+              onClick={() => setIsOpen(false)}
+              className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+            >
+              <Star className="h-4 w-4" />
+              Reviews
             </Link>
             {isLoggedIn && (
               <Link
