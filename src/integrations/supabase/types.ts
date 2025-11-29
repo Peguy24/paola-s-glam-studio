@@ -283,6 +283,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          photos: string[] | null
           rating: number
           review: string | null
           service_id: string
@@ -296,6 +297,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          photos?: string[] | null
           rating: number
           review?: string | null
           service_id: string
@@ -309,6 +311,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          photos?: string[] | null
           rating?: number
           review?: string | null
           service_id?: string

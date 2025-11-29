@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, FileText, XCircle, Star } from "lucide-react";
+import { Calendar, Clock, FileText, XCircle, Star, Upload, X, Image as ImageIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +50,7 @@ interface Appointment {
     id: string;
     rating: number;
     review: string | null;
+    photos: string[] | null;
   }>;
 }
 
@@ -71,6 +72,11 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -100,7 +106,8 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
         ratings (
           id,
           rating,
-          review
+          review,
+          photos
         )
       `)
       .eq("client_id", userId)
@@ -147,11 +154,77 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
     if (appointment.ratings && appointment.ratings.length > 0) {
       setRating(appointment.ratings[0].rating);
       setReview(appointment.ratings[0].review || "");
+      setExistingPhotos(appointment.ratings[0].photos || []);
     } else {
       setRating(0);
       setReview("");
+      setExistingPhotos([]);
     }
+    setPhotos([]);
+    setPhotoPreviews([]);
     setRatingDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newPhotos = Array.from(files).slice(0, 3 - photos.length - existingPhotos.length);
+    
+    if (photos.length + existingPhotos.length + newPhotos.length > 3) {
+      toast({
+        title: "Maximum 3 photos",
+        description: "You can upload up to 3 photos per review",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPhotos([...photos, ...newPhotos]);
+    
+    // Create previews
+    newPhotos.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreviews((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+    setPhotoPreviews(photoPreviews.filter((_, i) => i !== index));
+  };
+
+  const removeExistingPhoto = (index: number) => {
+    setExistingPhotos(existingPhotos.filter((_, i) => i !== index));
+  };
+
+  const uploadPhotos = async (): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+    
+    for (const photo of photos) {
+      const fileExt = photo.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('review-photos')
+        .upload(fileName, photo);
+      
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('review-photos')
+        .getPublicUrl(fileName);
+      
+      uploadedUrls.push(publicUrl);
+    }
+    
+    return uploadedUrls;
   };
 
   const submitRating = async () => {
@@ -165,8 +238,16 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
     }
 
     const existingRating = selectedAppointment.ratings?.[0];
+    setUploadingPhotos(true);
 
     try {
+      // Upload new photos if any
+      let allPhotoUrls = [...existingPhotos];
+      if (photos.length > 0) {
+        const newPhotoUrls = await uploadPhotos();
+        allPhotoUrls = [...allPhotoUrls, ...newPhotoUrls];
+      }
+
       if (existingRating) {
         // Update existing rating
         const { error } = await supabase
@@ -174,6 +255,7 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
           .update({
             rating,
             review: review.trim() || null,
+            photos: allPhotoUrls.length > 0 ? allPhotoUrls : null,
           })
           .eq("id", existingRating.id);
 
@@ -188,6 +270,7 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
             service_id: selectedAppointment.service_id,
             rating,
             review: review.trim() || null,
+            photos: allPhotoUrls.length > 0 ? allPhotoUrls : null,
           });
 
         if (error) throw error;
@@ -199,6 +282,9 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
       });
 
       setRatingDialogOpen(false);
+      setPhotos([]);
+      setPhotoPreviews([]);
+      setExistingPhotos([]);
       fetchAppointments();
     } catch (error: any) {
       toast({
@@ -206,6 +292,8 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setUploadingPhotos(false);
     }
   };
 
@@ -299,7 +387,19 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
                       ))}
                     </div>
                     {appointment.ratings[0].review && (
-                      <p className="text-sm text-muted-foreground">{appointment.ratings[0].review}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{appointment.ratings[0].review}</p>
+                    )}
+                    {appointment.ratings[0].photos && appointment.ratings[0].photos.length > 0 && (
+                      <div className="flex gap-2 mt-2">
+                        {appointment.ratings[0].photos.map((photo, idx) => (
+                          <img
+                            key={idx}
+                            src={photo}
+                            alt={`Review photo ${idx + 1}`}
+                            className="h-16 w-16 object-cover rounded-lg border border-border"
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -388,13 +488,76 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
                 rows={4}
               />
             </div>
+            
+            {/* Photo Upload Section */}
+            <div className="space-y-2">
+              <Label>Photos (Optional - Max 3)</Label>
+              <div className="flex flex-wrap gap-2">
+                {/* Existing Photos */}
+                {existingPhotos.map((url, index) => (
+                  <div key={`existing-${index}`} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Review photo ${index + 1}`}
+                      className="h-20 w-20 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingPhoto(index)}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                
+                {/* New Photo Previews */}
+                {photoPreviews.map((preview, index) => (
+                  <div key={`new-${index}`} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`New photo ${index + 1}`}
+                      className="h-20 w-20 object-cover rounded-lg border border-primary/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Upload Button */}
+                {existingPhotos.length + photos.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-20 w-20 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-muted-foreground/30 rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  >
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Add</span>
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <p className="text-xs text-muted-foreground">Share photos of your results</p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRatingDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setRatingDialogOpen(false)} disabled={uploadingPhotos}>
               Cancel
             </Button>
-            <Button onClick={submitRating}>
-              Submit Rating
+            <Button onClick={submitRating} disabled={uploadingPhotos}>
+              {uploadingPhotos ? "Uploading..." : "Submit Rating"}
             </Button>
           </DialogFooter>
         </DialogContent>
