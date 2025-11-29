@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { Star, Quote, Sparkles } from "lucide-react";
+import { Star, Quote, Sparkles, Image as ImageIcon, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Review {
   id: string;
   rating: number;
   review: string | null;
+  photos: string[] | null;
   created_at: string;
   admin_response: string | null;
   client: {
@@ -27,6 +29,7 @@ const Reviews = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReviews();
@@ -40,6 +43,7 @@ const Reviews = () => {
           id,
           rating,
           review,
+          photos,
           created_at,
           admin_response,
           client:profiles!ratings_client_id_fkey(full_name),
@@ -215,13 +219,35 @@ const Reviews = () => {
                     <Quote className="h-8 w-8 text-primary/20 mb-4 group-hover:text-primary/40 transition-colors" />
                     
                     {/* Review Text */}
-                    <p className="text-foreground mb-6 line-clamp-4 leading-relaxed">
+                    <p className="text-foreground mb-4 line-clamp-4 leading-relaxed">
                       "{review.review}"
                     </p>
 
+                    {/* Photos */}
+                    {review.photos && review.photos.length > 0 && (
+                      <div className="flex gap-2 mb-4">
+                        {review.photos.map((photo, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setLightboxImage(photo)}
+                            className="relative group overflow-hidden rounded-lg"
+                          >
+                            <img
+                              src={photo}
+                              alt={`Review photo ${idx + 1}`}
+                              className="h-16 w-16 object-cover transition-transform group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <ImageIcon className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Admin Response */}
                     {review.admin_response && (
-                      <div className="mb-6 p-3 bg-primary/5 rounded-lg border-l-2 border-primary">
+                      <div className="mb-4 p-3 bg-primary/5 rounded-lg border-l-2 border-primary">
                         <p className="text-sm text-muted-foreground italic">
                           <span className="font-medium text-primary">Response:</span> {review.admin_response}
                         </p>
@@ -283,6 +309,25 @@ const Reviews = () => {
           </a>
         </div>
       </section>
+
+      {/* Image Lightbox */}
+      <Dialog open={!!lightboxImage} onOpenChange={() => setLightboxImage(null)}>
+        <DialogContent className="max-w-3xl p-0 bg-transparent border-none">
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-2 right-2 z-50 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {lightboxImage && (
+            <img
+              src={lightboxImage}
+              alt="Review photo"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
