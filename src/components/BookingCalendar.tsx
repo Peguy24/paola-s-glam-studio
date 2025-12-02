@@ -334,18 +334,20 @@ const BookingCalendar = () => {
     <div className="space-y-4">
       {/* Calendar Card - Always visible */}
       <Card className="border-2">
-        <CardHeader>
+        <CardHeader className="pb-3 sm:pb-6">
           <CardTitle className="text-xl sm:text-2xl">Select Date</CardTitle>
           <CardDescription className="text-sm sm:text-base">Choose your preferred date</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate}
-            className="rounded-md border w-full max-w-full"
-            disabled={(date) => date < new Date()}
-          />
+        <CardContent className="flex justify-center px-2 sm:px-6">
+          <div className="w-full max-w-[340px] sm:max-w-md">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              className="rounded-md border w-full"
+              disabled={(date) => date < new Date()}
+            />
+          </div>
         </CardContent>
       </Card>
 
