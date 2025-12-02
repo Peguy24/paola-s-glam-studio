@@ -287,7 +287,7 @@ const BookingCalendar = () => {
           {availableSlots.length === 0 ? (
             <p className="text-sm text-muted-foreground">No slots available for this date</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
               {availableSlots.map((slot) => {
                 const remaining = slot.capacity - (slot.bookings_count || 0);
                 return (
@@ -295,13 +295,13 @@ const BookingCalendar = () => {
                     key={slot.id}
                     variant={selectedSlot === slot.id ? "default" : "outline"}
                     onClick={() => setSelectedSlot(slot.id)}
-                    className="justify-start flex-col items-start h-auto py-2 px-3"
+                    className="justify-start flex-col items-start h-auto py-3 px-4 sm:py-2 sm:px-3 min-h-[56px] sm:min-h-0"
                   >
                     <div className="flex items-center w-full">
-                      <Clock className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
-                      <span className="text-sm sm:text-base">{slot.start_time.slice(0, 5)}</span>
+                      <Clock className="mr-2 h-4 w-4 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span className="text-base sm:text-base font-medium">{slot.start_time.slice(0, 5)}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground mt-1">
+                    <span className="text-xs sm:text-xs text-muted-foreground mt-1">
                       {remaining} {remaining === 1 ? 'spot' : 'spots'} left
                     </span>
                   </Button>
