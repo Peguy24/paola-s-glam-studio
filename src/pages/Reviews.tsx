@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Star, Quote, Sparkles, Image as ImageIcon, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -328,6 +329,8 @@ const Reviews = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Footer />
     </div>
   );
 };
