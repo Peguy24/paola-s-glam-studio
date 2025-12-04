@@ -16,9 +16,10 @@ import RecurringPatterns from "@/components/admin/RecurringPatterns";
 import { TransformationGallery } from "@/components/admin/TransformationGallery";
 import { ContactMessages } from "@/components/admin/ContactMessages";
 import { RatingsManagement } from "@/components/admin/RatingsManagement";
+import { SiteSettings } from "@/components/admin/SiteSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star } from "lucide-react";
+import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings } from "lucide-react";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -99,7 +100,7 @@ const Admin = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             {/* Desktop: Horizontal Tab List */}
             {!isMobile && (
-              <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 gap-1">
+              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12 gap-1">
                 <TabsTrigger value="appointments" className="text-sm">
                   <Calendar className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Appointments
@@ -143,6 +144,10 @@ const Admin = () => {
                 <TabsTrigger value="notifications" className="text-sm">
                   <Bell className="h-4 w-4 mr-1.5 hidden lg:inline" />
                   Notifications
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="text-sm">
+                  <Settings className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                  Settings
                 </TabsTrigger>
               </TabsList>
             )}
@@ -224,6 +229,12 @@ const Admin = () => {
                         <span>Notifications</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="settings">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>Site Settings</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -271,6 +282,10 @@ const Admin = () => {
 
             <TabsContent value="notifications">
               <NotificationHistory />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <SiteSettings />
             </TabsContent>
           </Tabs>
         </div>
