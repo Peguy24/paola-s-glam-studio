@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Loader2 } from "lucide-react";
@@ -132,6 +133,8 @@ const Products = () => {
           )}
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

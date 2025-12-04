@@ -4,6 +4,7 @@ import { Sparkles, Calendar, ShoppingBag, Star, Heart, Loader2 } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 import brandPhoto from "@/assets/brand-photo.jpeg";
@@ -388,6 +389,8 @@ const Home = () => {
           </Link>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };
