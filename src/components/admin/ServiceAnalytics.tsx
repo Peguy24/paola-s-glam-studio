@@ -19,9 +19,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart3, DollarSign, TrendingUp, Calendar, Download, FileText, Loader2 } from "lucide-react";
+import { BarChart3, DollarSign, TrendingUp, TrendingDown, Calendar, Download, FileText, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, isWithinInterval } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, ComposedChart, Area } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -50,6 +50,23 @@ interface PeriodData {
   cancelled: number;
 }
 
+interface ComparisonData {
+  period: string;
+  currentRevenue: number;
+  previousRevenue: number;
+  currentBookings: number;
+  previousBookings: number;
+  currentCompleted: number;
+  previousCompleted: number;
+}
+
+interface PeriodSummary {
+  revenue: number;
+  bookings: number;
+  completed: number;
+  cancelled: number;
+}
+
 interface ServiceStats {
   service_id: string;
   service_name: string;
@@ -70,6 +87,9 @@ export function ServiceAnalytics() {
   const [exporting, setExporting] = useState(false);
   const [periodType, setPeriodType] = useState<PeriodType>("day");
   const [periodData, setPeriodData] = useState<PeriodData[]>([]);
+  const [comparisonData, setComparisonData] = useState<ComparisonData[]>([]);
+  const [currentPeriodSummary, setCurrentPeriodSummary] = useState<PeriodSummary>({ revenue: 0, bookings: 0, completed: 0, cancelled: 0 });
+  const [previousPeriodSummary, setPreviousPeriodSummary] = useState<PeriodSummary>({ revenue: 0, bookings: 0, completed: 0, cancelled: 0 });
   const [stats, setStats] = useState<ServiceStats[]>([]);
   const [totalStats, setTotalStats] = useState({
     totalBookings: 0,
@@ -85,6 +105,7 @@ export function ServiceAnalytics() {
   useEffect(() => {
     if (appointments.length > 0) {
       calculatePeriodData();
+      calculateComparisonData();
       calculateServiceStats();
     }
   }, [appointments, periodType]);
@@ -172,6 +193,128 @@ export function ServiceAnalytics() {
     });
 
     setPeriodData(data);
+  };
+
+  const calculateComparisonData = () => {
+    const now = new Date();
+    let periodCount: number;
+    let offsetFn: (date: Date, amount: number) => Date;
+    let intervalFn: (interval: { start: Date; end: Date }) => Date[];
+    let getLabel: (date: Date) => string;
+
+    switch (periodType) {
+      case "day":
+        periodCount = 7;
+        offsetFn = subDays;
+        intervalFn = eachDayOfInterval;
+        getLabel = (date) => format(date, "EEE");
+        break;
+      case "week":
+        periodCount = 6;
+        offsetFn = subWeeks;
+        intervalFn = eachWeekOfInterval;
+        getLabel = (date) => format(date, "MMM d");
+        break;
+      case "month":
+        periodCount = 6;
+        offsetFn = subMonths;
+        intervalFn = eachMonthOfInterval;
+        getLabel = (date) => format(date, "MMM");
+        break;
+    }
+
+    // Current period intervals
+    const currentStart = offsetFn(now, periodCount - 1);
+    const currentIntervals = intervalFn({ start: currentStart, end: now });
+
+    // Previous period intervals (offset by periodCount)
+    const previousEnd = offsetFn(currentStart, 1);
+    const previousStart = offsetFn(previousEnd, periodCount - 1);
+    const previousIntervals = intervalFn({ start: previousStart, end: previousEnd });
+
+    const getIntervalData = (intervalStart: Date, intervals: Date[], index: number) => {
+      const nextInterval = index < intervals.length - 1 ? intervals[index + 1] : null;
+      const intervalEnd = nextInterval 
+        ? nextInterval
+        : periodType === "day" 
+          ? new Date(intervalStart.getTime() + 24 * 60 * 60 * 1000)
+          : periodType === "week"
+            ? new Date(intervalStart.getTime() + 7 * 24 * 60 * 60 * 1000)
+            : new Date(intervalStart.getFullYear(), intervalStart.getMonth() + 1, 1);
+
+      const periodAppointments = appointments.filter((apt) => {
+        const aptDate = new Date(apt.slot?.date || apt.created_at);
+        return isWithinInterval(aptDate, { start: intervalStart, end: intervalEnd });
+      });
+
+      const completed = periodAppointments.filter(a => a.status === "completed");
+      const cancelled = periodAppointments.filter(a => a.status === "cancelled");
+
+      return {
+        bookings: periodAppointments.length,
+        revenue: completed.reduce((sum, apt) => sum + (apt.service?.price || 0), 0),
+        completed: completed.length,
+        cancelled: cancelled.length,
+      };
+    };
+
+    // Build comparison data aligned by position (not date)
+    const comparison: ComparisonData[] = currentIntervals.map((currentInterval, index) => {
+      const currentData = getIntervalData(currentInterval, currentIntervals, index);
+      const previousData = index < previousIntervals.length 
+        ? getIntervalData(previousIntervals[index], previousIntervals, index)
+        : { bookings: 0, revenue: 0, completed: 0, cancelled: 0 };
+
+      return {
+        period: getLabel(currentInterval),
+        currentRevenue: currentData.revenue,
+        previousRevenue: previousData.revenue,
+        currentBookings: currentData.bookings,
+        previousBookings: previousData.bookings,
+        currentCompleted: currentData.completed,
+        previousCompleted: previousData.completed,
+      };
+    });
+
+    setComparisonData(comparison);
+
+    // Calculate summaries
+    const currentSummary = comparison.reduce(
+      (acc, d) => ({
+        revenue: acc.revenue + d.currentRevenue,
+        bookings: acc.bookings + d.currentBookings,
+        completed: acc.completed + d.currentCompleted,
+        cancelled: acc.cancelled,
+      }),
+      { revenue: 0, bookings: 0, completed: 0, cancelled: 0 }
+    );
+
+    const previousSummary = comparison.reduce(
+      (acc, d) => ({
+        revenue: acc.revenue + d.previousRevenue,
+        bookings: acc.bookings + d.previousBookings,
+        completed: acc.completed + d.previousCompleted,
+        cancelled: acc.cancelled,
+      }),
+      { revenue: 0, bookings: 0, completed: 0, cancelled: 0 }
+    );
+
+    setCurrentPeriodSummary(currentSummary);
+    setPreviousPeriodSummary(previousSummary);
+  };
+
+  const getPercentageChange = (current: number, previous: number): { value: number; isPositive: boolean } => {
+    if (previous === 0) return { value: current > 0 ? 100 : 0, isPositive: current >= 0 };
+    const change = ((current - previous) / previous) * 100;
+    return { value: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  const getComparisonPeriodLabel = () => {
+    switch (periodType) {
+      case "day": return "Last 7 Days vs Previous 7 Days";
+      case "week": return "Last 6 Weeks vs Previous 6 Weeks";
+      case "month": return "Last 6 Months vs Previous 6 Months";
+    }
   };
 
   const calculateServiceStats = () => {
@@ -393,6 +536,166 @@ export function ServiceAnalytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Period Comparison Cards */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {(() => {
+          const revenueChange = getPercentageChange(currentPeriodSummary.revenue, previousPeriodSummary.revenue);
+          return (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Revenue Change</CardTitle>
+                {revenueChange.isPositive ? (
+                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                ) : (
+                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${revenueChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {revenueChange.isPositive ? '+' : '-'}{revenueChange.value.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  ${currentPeriodSummary.revenue.toFixed(0)} vs ${previousPeriodSummary.revenue.toFixed(0)}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+        
+        {(() => {
+          const bookingsChange = getPercentageChange(currentPeriodSummary.bookings, previousPeriodSummary.bookings);
+          return (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Bookings Change</CardTitle>
+                {bookingsChange.isPositive ? (
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-red-500" />
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${bookingsChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {bookingsChange.isPositive ? '+' : '-'}{bookingsChange.value.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {currentPeriodSummary.bookings} vs {previousPeriodSummary.bookings} bookings
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+        
+        {(() => {
+          const completedChange = getPercentageChange(currentPeriodSummary.completed, previousPeriodSummary.completed);
+          return (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed Change</CardTitle>
+                {completedChange.isPositive ? (
+                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                ) : (
+                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${completedChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {completedChange.isPositive ? '+' : '-'}{completedChange.value.toFixed(1)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {currentPeriodSummary.completed} vs {previousPeriodSummary.completed} completed
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+      </div>
+
+      {/* Comparison Charts */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Period Comparison
+          </CardTitle>
+          <CardDescription>{getComparisonPeriodLabel()}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Revenue Comparison Chart */}
+          <div>
+            <h4 className="text-sm font-medium mb-4">Revenue Comparison</h4>
+            <div className="h-[250px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={comparisonData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 11 }} 
+                  />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      `$${value.toFixed(2)}`, 
+                      name === 'currentRevenue' ? 'Current Period' : 'Previous Period'
+                    ]}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                  />
+                  <Legend 
+                    formatter={(value) => value === 'currentRevenue' ? 'Current Period' : 'Previous Period'}
+                  />
+                  <Bar dataKey="currentRevenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="currentRevenue" />
+                  <Bar dataKey="previousRevenue" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.5} name="previousRevenue" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bookings Comparison Chart */}
+          <div>
+            <h4 className="text-sm font-medium mb-4">Bookings Comparison</h4>
+            <div className="h-[250px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={comparisonData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="period" 
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      value, 
+                      name === 'currentBookings' ? 'Current Period' : 'Previous Period'
+                    ]}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                  />
+                  <Legend 
+                    formatter={(value) => value === 'currentBookings' ? 'Current Period' : 'Previous Period'}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="currentBookings" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2} 
+                    dot={{ fill: "hsl(var(--primary))" }}
+                    name="currentBookings" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="previousBookings" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    strokeWidth={2} 
+                    strokeDasharray="5 5"
+                    dot={{ fill: "hsl(var(--muted-foreground))" }}
+                    name="previousBookings" 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Period Selector & Charts */}
       <Card>
