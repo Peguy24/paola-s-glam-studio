@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, User, Mail, Phone } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle } from "lucide-react";
 
 interface Appointment {
   id: string;
@@ -38,6 +39,13 @@ const statusColors = {
   completed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
 };
 
+const statusIcons = {
+  pending: AlertCircle,
+  confirmed: Clock3,
+  completed: CheckCircle,
+  cancelled: XCircle,
+};
+
 const ITEMS_PER_PAGE = 10;
 
 const AppointmentsList = () => {
@@ -46,11 +54,31 @@ const AppointmentsList = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchAppointments(true);
+    fetchStatusCounts();
   }, []);
+
+  useEffect(() => {
+    fetchAppointments(true);
+  }, [statusFilter]);
+
+  const fetchStatusCounts = async () => {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("status");
+
+    if (!error && data) {
+      const counts: Record<string, number> = { all: data.length };
+      data.forEach((apt: { status: string }) => {
+        counts[apt.status] = (counts[apt.status] || 0) + 1;
+      });
+      setStatusCounts(counts);
+    }
+  };
 
   const fetchAppointments = async (reset = false) => {
     if (reset) {
@@ -64,7 +92,7 @@ const AppointmentsList = () => {
     const from = currentPage * ITEMS_PER_PAGE;
     const to = from + ITEMS_PER_PAGE - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("appointments")
       .select(`
         id,
@@ -87,7 +115,13 @@ const AppointmentsList = () => {
           email,
           phone
         )
-      `, { count: 'exact' })
+      `, { count: 'exact' });
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -156,26 +190,84 @@ const AppointmentsList = () => {
     });
 
     fetchAppointments(true);
+    fetchStatusCounts();
   };
 
-  if (loading) {
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(value);
+  };
+
+  if (loading && appointments.length === 0) {
     return <div className="text-center py-8">Loading appointments...</div>;
   }
 
-  if (appointments.length === 0) {
-    return (
-      <Card className="border-2">
-        <CardContent className="py-12 text-center">
-          <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">No appointments found</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-3 sm:space-y-4 max-w-full">
-      {appointments.map((appointment) => (
+    <div className="space-y-4">
+      {/* Status Filter Tabs */}
+      <Tabs value={statusFilter} onValueChange={handleFilterChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsTrigger value="all" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            All
+            {statusCounts.all > 0 && (
+              <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs px-1.5">
+                {statusCounts.all}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-yellow-500" />
+            <span className="hidden sm:inline">Pending</span>
+            {statusCounts.pending > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5">
+                {statusCounts.pending}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="confirmed" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <Clock3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-green-500" />
+            <span className="hidden sm:inline">Confirmed</span>
+            {statusCounts.confirmed > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5">
+                {statusCounts.confirmed}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-blue-500" />
+            <span className="hidden sm:inline">Completed</span>
+            {statusCounts.completed > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5">
+                {statusCounts.completed}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="cancelled" className="text-xs sm:text-sm py-2 px-1 sm:px-3">
+            <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-red-500" />
+            <span className="hidden sm:inline">Cancelled</span>
+            {statusCounts.cancelled > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5">
+                {statusCounts.cancelled}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Appointments List */}
+      {appointments.length === 0 ? (
+        <Card className="border-2">
+          <CardContent className="py-12 text-center">
+            <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">
+              {statusFilter === "all" 
+                ? "No appointments found" 
+                : `No ${statusFilter} appointments found`}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3 sm:space-y-4 max-w-full">
+          {appointments.map((appointment) => (
         <Card key={appointment.id} className="border-2 w-full overflow-hidden">
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -253,19 +345,21 @@ const AppointmentsList = () => {
             </div>
           </CardContent>
         </Card>
-      ))}
-      
-      {hasMore && (
-        <div className="flex justify-center pt-4">
-          <Button 
-            onClick={loadMore} 
-            disabled={loadingMore}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            {loadingMore ? "Loading..." : "Load More"}
-          </Button>
-        </div>
+        ))}
+        
+        {hasMore && (
+          <div className="flex justify-center pt-4">
+            <Button 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </Button>
+          </div>
+        )}
+      </div>
       )}
     </div>
   );
