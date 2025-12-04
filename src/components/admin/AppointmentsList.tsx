@@ -7,7 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle, Download, FileText, Loader2 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Appointment {
   id: string;
@@ -56,6 +58,7 @@ const AppointmentsList = () => {
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -197,6 +200,164 @@ const AppointmentsList = () => {
     setStatusFilter(value);
   };
 
+  const fetchAllAppointmentsForExport = async (): Promise<Appointment[]> => {
+    let query = supabase
+      .from("appointments")
+      .select(`
+        id,
+        service_type,
+        status,
+        notes,
+        created_at,
+        service:service_id (
+          name,
+          price,
+          category
+        ),
+        slot:slot_id (
+          date,
+          start_time,
+          end_time
+        ),
+        profile:client_id (
+          full_name,
+          email,
+          phone
+        )
+      `);
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return data as unknown as Appointment[];
+  };
+
+  const exportToCSV = async () => {
+    setExporting(true);
+    try {
+      const allAppointments = await fetchAllAppointmentsForExport();
+      
+      if (allAppointments.length === 0) {
+        toast({
+          title: "No data to export",
+          description: "There are no appointments to export.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const headers = ["Date", "Time", "Service", "Category", "Price", "Client Name", "Email", "Phone", "Status", "Notes"];
+      
+      const rows = allAppointments.map(apt => [
+        format(new Date(apt.slot.date), "yyyy-MM-dd"),
+        `${apt.slot.start_time.slice(0, 5)} - ${apt.slot.end_time.slice(0, 5)}`,
+        apt.service?.name || apt.service_type,
+        apt.service?.category || "",
+        apt.service ? `$${apt.service.price.toFixed(2)}` : "",
+        apt.profile.full_name,
+        apt.profile.email,
+        apt.profile.phone || "",
+        apt.status,
+        apt.notes || "",
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `appointments_${statusFilter}_${format(new Date(), "yyyy-MM-dd")}.csv`;
+      link.click();
+
+      toast({
+        title: "Export successful",
+        description: `Exported ${allAppointments.length} appointments to CSV.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    setExporting(true);
+    try {
+      const allAppointments = await fetchAllAppointmentsForExport();
+      
+      if (allAppointments.length === 0) {
+        toast({
+          title: "No data to export",
+          description: "There are no appointments to export.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(18);
+      doc.text("Appointments Report", 14, 22);
+      
+      // Subtitle
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Filter: ${statusFilter === "all" ? "All Appointments" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}`, 14, 30);
+      doc.text(`Generated: ${format(new Date(), "MMMM d, yyyy 'at' h:mm a")}`, 14, 36);
+      doc.text(`Total: ${allAppointments.length} appointments`, 14, 42);
+
+      // Table
+      const tableData = allAppointments.map(apt => [
+        format(new Date(apt.slot.date), "MMM d, yyyy"),
+        apt.slot.start_time.slice(0, 5),
+        apt.service?.name || apt.service_type,
+        apt.profile.full_name,
+        apt.profile.email,
+        apt.service ? `$${apt.service.price.toFixed(2)}` : "",
+        apt.status,
+      ]);
+
+      autoTable(doc, {
+        head: [["Date", "Time", "Service", "Client", "Email", "Price", "Status"]],
+        body: tableData,
+        startY: 48,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [139, 92, 246] },
+        alternateRowStyles: { fillColor: [245, 245, 250] },
+      });
+
+      doc.save(`appointments_${statusFilter}_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+
+      toast({
+        title: "Export successful",
+        description: `Exported ${allAppointments.length} appointments to PDF.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading && appointments.length === 0) {
     return <div className="text-center py-8">Loading appointments...</div>;
   }
@@ -252,6 +413,41 @@ const AppointmentsList = () => {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* Export Buttons */}
+      {appointments.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToCSV}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToPDF}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-2 h-4 w-4" />
+            )}
+            Export PDF
+          </Button>
+          <span className="text-xs text-muted-foreground self-center ml-2">
+            {statusFilter === "all" ? "All" : statusFilter} appointments
+          </span>
+        </div>
+      )}
 
       {/* Appointments List */}
       {appointments.length === 0 ? (
