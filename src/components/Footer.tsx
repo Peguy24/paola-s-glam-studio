@@ -150,17 +150,17 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Hours</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex justify-between">
-                <span>Mon - Fri</span>
-                <span>{settings.hours_weekday}</span>
+              <li className="flex justify-between gap-4">
+                <span className="flex-shrink-0">Mon - Fri</span>
+                <span className="text-right">{settings.hours_weekday}</span>
               </li>
-              <li className="flex justify-between">
-                <span>Saturday</span>
-                <span>{settings.hours_saturday}</span>
+              <li className="flex justify-between gap-4">
+                <span className="flex-shrink-0">Saturday</span>
+                <span className="text-right">{settings.hours_saturday}</span>
               </li>
-              <li className="flex justify-between">
-                <span>Sunday</span>
-                <span>{settings.hours_sunday}</span>
+              <li className="flex justify-between gap-4">
+                <span className="flex-shrink-0">Sunday</span>
+                <span className="text-right">{settings.hours_sunday}</span>
               </li>
             </ul>
           </div>

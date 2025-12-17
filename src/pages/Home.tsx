@@ -86,20 +86,20 @@ const Home = () => {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative overflow-hidden">
+      <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-[var(--gradient-soft)] opacity-50" />
-        <div className="absolute top-20 right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-80 h-80 bg-secondary/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-10 w-32 sm:w-64 h-32 sm:h-64 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 left-10 w-40 sm:w-80 h-40 sm:h-80 bg-secondary/10 rounded-full blur-3xl" />
         
         <div className="container mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary">
-                <Sparkles className="h-4 w-4" />
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 rounded-full text-xs sm:text-sm font-medium text-primary">
+                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                 Premium Beauty Experience
               </div>
               
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-tight">
                 <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   Unleash Your
                 </span>
@@ -107,38 +107,38 @@ const Home = () => {
                 <span className="text-foreground">Inner Glamour</span>
               </h1>
               
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-xl">
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl">
                 Experience luxury beauty services from hair styling to nail artistry, all in one stunning destination.
               </p>
               
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                 <Link to="/appointments" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)] text-base sm:text-lg px-6 sm:px-8">
-                    <Calendar className="mr-2 h-5 w-5" />
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)] text-sm sm:text-base lg:text-lg px-5 sm:px-6 lg:px-8">
+                    <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                     Book Now
                   </Button>
                 </Link>
                 <Link to="/products" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 border-2">
-                    <ShoppingBag className="mr-2 h-5 w-5" />
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto text-sm sm:text-base lg:text-lg px-5 sm:px-6 lg:px-8 border-2">
+                    <ShoppingBag className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                     Shop Products
                   </Button>
                 </Link>
               </div>
               
-              <div className="flex items-center gap-6 pt-4">
+              <div className="flex items-center gap-4 sm:gap-6 pt-4">
                 <div className="flex -space-x-2">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary border-2 border-background" />
+                    <div key={i} className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-primary to-secondary border-2 border-background" />
                   ))}
                 </div>
                 <div>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                      <Star key={i} className="h-3 w-3 sm:h-4 sm:w-4 fill-accent text-accent" />
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">Trusted by 500+ clients</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Trusted by 500+ clients</p>
                 </div>
               </div>
             </div>
@@ -156,38 +156,38 @@ const Home = () => {
       </section>
 
       {/* Brand Story */}
-      <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/5">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-b from-background to-secondary/5">
         <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-sm font-medium text-accent">
-                <Heart className="h-4 w-4" />
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-accent/10 rounded-full text-xs sm:text-sm font-medium text-accent">
+                <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
                 Our Story
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold">
                 Where Beauty Meets{" "}
                 <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   Artistry
                 </span>
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
                 At Paola Beauty Glam, we believe that beauty is not just about looking good—it's about feeling confident and empowered. Founded with a passion for luxury beauty and self-care, we curate premium products and services that celebrate individuality.
               </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-sm sm:text-base lg:text-lg text-muted-foreground leading-relaxed">
                 Our expert team combines years of experience with the latest trends and techniques to bring you transformative beauty experiences. From our carefully selected product line to our personalized services, every detail is designed with you in mind.
               </p>
-              <div className="flex items-center gap-8 pt-4">
-                <div>
-                  <div className="text-3xl font-bold text-primary">500+</div>
-                  <div className="text-sm text-muted-foreground">Happy Clients</div>
+              <div className="grid grid-cols-3 gap-4 sm:flex sm:items-center sm:gap-6 lg:gap-8 pt-4">
+                <div className="text-center sm:text-left">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">500+</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Happy Clients</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-secondary">5+</div>
-                  <div className="text-sm text-muted-foreground">Years Experience</div>
+                <div className="text-center sm:text-left">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-secondary">5+</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Years Experience</div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-accent">100%</div>
-                  <div className="text-sm text-muted-foreground">Premium Quality</div>
+                <div className="text-center sm:text-left">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-accent">100%</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Premium Quality</div>
                 </div>
               </div>
             </div>
@@ -204,25 +204,25 @@ const Home = () => {
       </section>
 
       {/* Transformations Gallery */}
-      <section className="py-20 px-4 bg-gradient-to-b from-secondary/5 to-background">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-b from-secondary/5 to-background">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
-              <Sparkles className="h-4 w-4" />
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 rounded-full text-xs sm:text-sm font-medium text-primary mb-3 sm:mb-4">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
               Our Transformations
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">
               See The{" "}
               <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                 Magic Happen
               </span>
             </h2>
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
               Real results from our expert beauty services
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {transformationsLoading ? (
               <div className="col-span-full text-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
@@ -249,26 +249,26 @@ const Home = () => {
                     key={transformation.id} 
                     className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradientClasses[index % 3]} p-1`}
                   >
-                    <div className="bg-background rounded-xl overflow-hidden">
-                      <div className="grid grid-cols-2">
-                        <div className="relative">
-                          <div className="absolute top-2 left-2 z-10 px-3 py-1 bg-background/90 rounded-full text-xs font-semibold">
-                            Before
-                          </div>
+                      <div className="bg-background rounded-xl overflow-hidden">
+                        <div className="grid grid-cols-2">
+                          <div className="relative">
+                            <div className="absolute top-2 left-2 z-10 px-2 py-0.5 sm:px-3 sm:py-1 bg-background/90 rounded-full text-[10px] sm:text-xs font-semibold">
+                              Before
+                            </div>
                           <img
                             src={transformation.before_image_url}
                             alt={`${transformation.title} before`}
-                            className="w-full h-64 object-cover"
+                            className="w-full h-40 sm:h-52 lg:h-64 object-cover"
                           />
                         </div>
                         <div className="relative">
-                          <div className={`absolute top-2 right-2 z-10 px-3 py-1 ${badgeClasses[index % 3]} rounded-full text-xs font-semibold`}>
+                          <div className={`absolute top-2 right-2 z-10 px-2 py-0.5 sm:px-3 sm:py-1 ${badgeClasses[index % 3]} rounded-full text-[10px] sm:text-xs font-semibold`}>
                             After
                           </div>
                           <img
                             src={transformation.after_image_url}
                             alt={`${transformation.title} after`}
-                            className="w-full h-64 object-cover"
+                            className="w-full h-40 sm:h-52 lg:h-64 object-cover"
                           />
                         </div>
                       </div>
@@ -295,11 +295,11 @@ const Home = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="py-20 px-4">
+      <section className="py-12 sm:py-16 lg:py-20 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Featured Products</h2>
-            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Featured Products</h2>
+            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
               Discover our handpicked selection of premium beauty essentials
             </p>
           </div>
@@ -314,7 +314,7 @@ const Home = () => {
               <p className="text-muted-foreground">No featured products available yet</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {featuredProducts.map((product) => {
                 const image = product.node.images?.edges?.[0]?.node;
                 const price = product.node.priceRange.minVariantPrice;
@@ -375,15 +375,15 @@ const Home = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-primary via-secondary to-accent">
+      <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-r from-primary via-secondary to-accent">
         <div className="container mx-auto text-center text-primary-foreground">
-          <Sparkles className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-6" />
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Shine?</h2>
-          <p className="text-base sm:text-lg mb-8 max-w-2xl mx-auto opacity-90">
+          <Sparkles className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mx-auto mb-4 sm:mb-6" />
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Ready to Shine?</h2>
+          <p className="text-sm sm:text-base lg:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto opacity-90 px-4">
             Book your appointment today and experience the Paola Beauty Glam difference
           </p>
           <Link to="/appointments">
-            <Button size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90 text-lg px-8">
+            <Button size="lg" variant="secondary" className="bg-background text-foreground hover:bg-background/90 text-sm sm:text-base lg:text-lg px-6 sm:px-8">
               Book Your Appointment
             </Button>
           </Link>
