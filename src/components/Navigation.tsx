@@ -51,7 +51,7 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium">
               Home
             </Link>
@@ -87,7 +87,7 @@ const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button & Cart */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="lg:hidden flex items-center gap-2">
             <CartDrawer />
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -100,7 +100,7 @@ const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border">
+          <div className="lg:hidden py-4 space-y-4 border-t border-border">
             <Link
               to="/"
               onClick={() => setIsOpen(false)}
