@@ -92,7 +92,7 @@ const Home = () => {
         <div className="absolute bottom-10 left-10 w-40 sm:w-80 h-40 sm:h-80 bg-secondary/10 rounded-full blur-3xl" />
         
         <div className="container mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="space-y-4 sm:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 rounded-full text-xs sm:text-sm font-medium text-primary">
                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -158,7 +158,7 @@ const Home = () => {
       {/* Brand Story */}
       <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-b from-background to-secondary/5">
         <div className="container mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="space-y-4 sm:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-accent/10 rounded-full text-xs sm:text-sm font-medium text-accent">
                 <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
