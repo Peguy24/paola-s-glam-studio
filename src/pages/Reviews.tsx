@@ -178,15 +178,15 @@ const Reviews = () => {
       </section>
 
       {/* Reviews Grid */}
-      <section className="py-16 px-4">
+      <section className="py-12 sm:py-16 px-4">
         <div className="container mx-auto">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[...Array(6)].map((_, i) => (
                 <Card key={i} className="overflow-hidden">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-full" />
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-24" />
                         <Skeleton className="h-3 w-16" />
@@ -198,17 +198,17 @@ const Reviews = () => {
               ))}
             </div>
           ) : filteredReviews.length === 0 ? (
-            <div className="text-center py-16">
-              <Quote className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-muted-foreground mb-2">No Reviews Yet</h3>
-              <p className="text-muted-foreground">
+            <div className="text-center py-12 sm:py-16">
+              <Quote className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground mb-2">No Reviews Yet</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {filter === "all" 
                   ? "Be the first to share your experience!"
                   : `No reviews for ${filter} category yet.`}
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredReviews.map((review, index) => (
                 <Card 
                   key={review.id} 

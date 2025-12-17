@@ -18,7 +18,6 @@ import { ContactMessages } from "@/components/admin/ContactMessages";
 import { RatingsManagement } from "@/components/admin/RatingsManagement";
 import { SiteSettings } from "@/components/admin/SiteSettings";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings } from "lucide-react";
 
 const Admin = () => {
@@ -26,7 +25,6 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState("appointments");
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkAdminStatus();
@@ -98,71 +96,70 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            {/* Desktop: Horizontal Tab List */}
-            {!isMobile && (
-              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12 gap-1">
-                <TabsTrigger value="appointments" className="text-sm">
-                  <Calendar className="h-4 w-4 mr-1.5 hidden lg:inline" />
+            {/* Desktop: Horizontal Tab List (lg and above) */}
+            <div className="hidden lg:block">
+              <TabsList className="grid w-full grid-cols-6 xl:grid-cols-12 gap-1">
+                <TabsTrigger value="appointments" className="text-xs xl:text-sm">
+                  <Calendar className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Appointments
                 </TabsTrigger>
-                <TabsTrigger value="availability" className="text-sm">
-                  <Clock className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="availability" className="text-xs xl:text-sm">
+                  <Clock className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Availability
                 </TabsTrigger>
-                <TabsTrigger value="recurring" className="text-sm">
-                  <Clock className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="recurring" className="text-xs xl:text-sm">
+                  <Clock className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Recurring
                 </TabsTrigger>
-                <TabsTrigger value="services" className="text-sm">
-                  <Package className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="services" className="text-xs xl:text-sm">
+                  <Package className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Services
                 </TabsTrigger>
-                <TabsTrigger value="gallery" className="text-sm">
-                  <Image className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="gallery" className="text-xs xl:text-sm">
+                  <Image className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Gallery
                 </TabsTrigger>
-                <TabsTrigger value="messages" className="text-sm">
-                  <Mail className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="messages" className="text-xs xl:text-sm">
+                  <Mail className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Messages
                 </TabsTrigger>
-                <TabsTrigger value="ratings" className="text-sm">
-                  <Star className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="ratings" className="text-xs xl:text-sm">
+                  <Star className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Ratings
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="text-sm">
-                  <BarChart className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="analytics" className="text-xs xl:text-sm">
+                  <BarChart className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Analytics
                 </TabsTrigger>
-                <TabsTrigger value="users" className="text-sm">
-                  <Users className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="users" className="text-xs xl:text-sm">
+                  <Users className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Users
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="text-sm">
-                  <Activity className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="activity" className="text-xs xl:text-sm">
+                  <Activity className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Activity
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="text-sm">
-                  <Bell className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="notifications" className="text-xs xl:text-sm">
+                  <Bell className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="text-sm">
-                  <Settings className="h-4 w-4 mr-1.5 hidden lg:inline" />
+                <TabsTrigger value="settings" className="text-xs xl:text-sm">
+                  <Settings className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Settings
                 </TabsTrigger>
               </TabsList>
-            )}
+            </div>
 
-            {/* Mobile: Dropdown Select */}
-            {isMobile && (
-              <div className="space-y-2">
-                <Label htmlFor="admin-section" className="text-sm font-medium">
-                  Select Section
-                </Label>
-                <Select value={activeTab} onValueChange={setActiveTab}>
-                  <SelectTrigger id="admin-section" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+            {/* Tablet & Mobile: Dropdown Select */}
+            <div className="lg:hidden space-y-2">
+              <Label htmlFor="admin-section" className="text-sm font-medium">
+                Select Section
+              </Label>
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger id="admin-section" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
                     <SelectItem value="appointments">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
@@ -235,10 +232,9 @@ const Admin = () => {
                         <span>Site Settings</span>
                       </div>
                     </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                </SelectContent>
+              </Select>
+            </div>
 
             <TabsContent value="appointments">
               <AppointmentsList />

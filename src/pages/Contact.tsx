@@ -102,7 +102,7 @@ const Contact = () => {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6 sm:gap-12">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
             {/* Contact Form */}
             <Card className="border-2">
               <CardContent className="p-4 sm:p-6 lg:p-8">

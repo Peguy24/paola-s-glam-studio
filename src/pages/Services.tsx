@@ -235,7 +235,7 @@ const Services = () => {
               <p className="text-muted-foreground">No services available at the moment.</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {Object.entries(groupedServices).map(([category, categoryServices]) => (
                 <Card key={category} className="border-2 hover:border-primary/50 hover:shadow-[var(--shadow-elegant)] transition-all">
                   <CardHeader>
