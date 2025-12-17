@@ -118,35 +118,35 @@ const Reviews = () => {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-4 bg-gradient-to-b from-primary/5 via-secondary/5 to-background">
+      <section className="pt-24 sm:pt-32 pb-12 sm:pb-16 px-4 bg-gradient-to-b from-primary/5 via-secondary/5 to-background">
         <div className="container mx-auto text-center max-w-4xl">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 rounded-full text-primary text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+            <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
             Client Testimonials
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent px-4">
             What Our Clients Say
           </h1>
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mb-6 sm:mb-8 px-4">
             Real experiences from our valued clients. See why they trust us with their beauty journey.
           </p>
           
           {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 mb-8">
+          <div className="grid grid-cols-3 gap-4 sm:flex sm:flex-wrap sm:justify-center sm:gap-8 mb-6 sm:mb-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary">{reviews.length}</div>
-              <div className="text-sm text-muted-foreground">Total Reviews</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">{reviews.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Total Reviews</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1">
-                <span className="text-4xl font-bold text-primary">{averageRating}</span>
-                <Star className="h-6 w-6 fill-primary text-primary" />
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">{averageRating}</span>
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 fill-primary text-primary" />
               </div>
-              <div className="text-sm text-muted-foreground">Average Rating</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Average Rating</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary">{fiveStarCount}</div>
-              <div className="text-sm text-muted-foreground">5-Star Reviews</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">{fiveStarCount}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">5-Star Reviews</div>
             </div>
           </div>
         </div>
@@ -294,17 +294,17 @@ const Reviews = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10">
+      <section className="py-12 sm:py-16 px-4 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10">
         <div className="container mx-auto text-center max-w-2xl">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-foreground px-4">
             Ready to Experience the Difference?
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 px-4">
             Join our satisfied clients and discover your own transformation.
           </p>
           <a
             href="/appointments"
-            className="inline-block px-8 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all"
+            className="inline-block px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all text-sm sm:text-base"
           >
             Book Your Appointment
           </a>

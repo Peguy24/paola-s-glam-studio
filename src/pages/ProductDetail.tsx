@@ -127,7 +127,7 @@ const ProductDetail = () => {
             </Button>
           </Link>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
             <div>
               <Card>
                 <CardContent className="p-0">
@@ -139,17 +139,17 @@ const ProductDetail = () => {
                     />
                   ) : (
                     <div className="w-full aspect-square bg-secondary/20 flex items-center justify-center rounded-lg">
-                      <ShoppingCart className="h-20 w-20 text-muted-foreground" />
+                      <ShoppingCart className="h-16 w-16 sm:h-20 sm:w-20 text-muted-foreground" />
                     </div>
                   )}
                 </CardContent>
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold mb-2">{product.title}</h1>
-                <p className="text-2xl font-bold text-primary">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{product.title}</h1>
+                <p className="text-xl sm:text-2xl font-bold text-primary">
                   {price.currencyCode} {parseFloat(price.amount).toFixed(2)}
                 </p>
               </div>
