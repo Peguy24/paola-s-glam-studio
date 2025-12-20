@@ -17,6 +17,48 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify admin authorization
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify user token and check admin role
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'admin'
+    });
+
+    if (roleError || !isAdmin) {
+      console.error('Admin role check failed:', roleError || 'User is not an admin');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Admin ${user.email} authorized for send-review-reminder`);
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     // Note: If RESEND_API_KEY is not configured, the function will still log
@@ -31,10 +73,6 @@ const handler = async (req: Request): Promise<Response> => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
-
-    const supabaseUrl = Deno.env.get("VITE_SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { appointmentId }: ReviewReminderRequest = await req.json();
 
