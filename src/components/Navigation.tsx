@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
+import { NavLink } from "./NavLink";
 import { Menu, X, Sparkles, Shield, User, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CartDrawer } from "./CartDrawer";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
+
+const navLinkClass = "relative text-foreground hover:text-primary transition-colors font-medium after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left";
+const activeNavLinkClass = "text-primary after:scale-x-100 after:origin-bottom-left";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,34 +55,34 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-4">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium">
+          <div className="hidden lg:flex items-center gap-6">
+            <NavLink to="/" className={navLinkClass} activeClassName={activeNavLinkClass} end>
               Home
-            </Link>
-            <Link to="/services" className="text-foreground hover:text-primary transition-colors font-medium">
+            </NavLink>
+            <NavLink to="/services" className={navLinkClass} activeClassName={activeNavLinkClass}>
               Services
-            </Link>
-            <Link to="/products" className="text-foreground hover:text-primary transition-colors font-medium">
+            </NavLink>
+            <NavLink to="/products" className={navLinkClass} activeClassName={activeNavLinkClass}>
               Shop Products
-            </Link>
-            <Link to="/contact" className="text-foreground hover:text-primary transition-colors font-medium">
+            </NavLink>
+            <NavLink to="/contact" className={navLinkClass} activeClassName={activeNavLinkClass}>
               Contact
-            </Link>
-            <Link to="/reviews" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+            </NavLink>
+            <NavLink to="/reviews" className={`${navLinkClass} flex items-center gap-1`} activeClassName={activeNavLinkClass}>
               <Star className="h-4 w-4" />
               Reviews
-            </Link>
+            </NavLink>
             {isLoggedIn && (
-              <Link to="/profile" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+              <NavLink to="/profile" className={`${navLinkClass} flex items-center gap-1`} activeClassName={activeNavLinkClass}>
                 <User className="h-4 w-4" />
                 Profile
-              </Link>
+              </NavLink>
             )}
             {isAdmin && (
-              <Link to="/admin" className="text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1">
+              <NavLink to="/admin" className={`${navLinkClass} flex items-center gap-1`} activeClassName={activeNavLinkClass}>
                 <Shield className="h-4 w-4" />
                 Admin
-              </Link>
+              </NavLink>
             )}
             <CartDrawer />
             <Link to="/appointments" className="px-6 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold hover:shadow-[var(--shadow-glow)] transition-all">
@@ -100,67 +104,75 @@ const Navigation = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="lg:hidden py-4 space-y-4 border-t border-border">
-            <Link
+          <div className="lg:hidden py-4 space-y-1 border-t border-border">
+            <NavLink
               to="/"
               onClick={() => setIsOpen(false)}
-              className="block text-foreground hover:text-primary transition-colors font-medium"
+              className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium"
+              activeClassName="text-primary bg-primary/10"
+              end
             >
               Home
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/services"
               onClick={() => setIsOpen(false)}
-              className="block text-foreground hover:text-primary transition-colors font-medium"
+              className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium"
+              activeClassName="text-primary bg-primary/10"
             >
               Services
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/products"
               onClick={() => setIsOpen(false)}
-              className="block text-foreground hover:text-primary transition-colors font-medium"
+              className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium"
+              activeClassName="text-primary bg-primary/10"
             >
               Shop Products
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/contact"
               onClick={() => setIsOpen(false)}
-              className="block text-foreground hover:text-primary transition-colors font-medium"
+              className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium"
+              activeClassName="text-primary bg-primary/10"
             >
               Contact
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/reviews"
               onClick={() => setIsOpen(false)}
-              className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+              className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium flex items-center gap-1"
+              activeClassName="text-primary bg-primary/10"
             >
               <Star className="h-4 w-4" />
               Reviews
-            </Link>
+            </NavLink>
             {isLoggedIn && (
-              <Link
+              <NavLink
                 to="/profile"
                 onClick={() => setIsOpen(false)}
-                className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+                className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium flex items-center gap-1"
+                activeClassName="text-primary bg-primary/10"
               >
                 <User className="h-4 w-4" />
                 Profile
-              </Link>
+              </NavLink>
             )}
             {isAdmin && (
-              <Link
+              <NavLink
                 to="/admin"
                 onClick={() => setIsOpen(false)}
-                className="block text-foreground hover:text-primary transition-colors font-medium flex items-center gap-1"
+                className="block py-2 px-3 rounded-lg text-foreground hover:text-primary hover:bg-primary/5 transition-all font-medium flex items-center gap-1"
+                activeClassName="text-primary bg-primary/10"
               >
                 <Shield className="h-4 w-4" />
                 Admin
-              </Link>
+              </NavLink>
             )}
             <Link
               to="/appointments"
               onClick={() => setIsOpen(false)}
-              className="block px-6 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold text-center"
+              className="block mt-3 px-6 py-2.5 bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-full font-semibold text-center"
             >
               Book Appointment
             </Link>
