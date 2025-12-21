@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { getSignedPhotoUrls } from "@/lib/storage";
 
 interface Review {
   id: string;
@@ -56,11 +57,21 @@ const Reviews = () => {
 
       if (error) throw error;
 
-      const typedData = data as Review[];
-      setReviews(typedData);
+      // Convert public URLs to signed URLs for photos
+      const reviewsWithSignedUrls = await Promise.all(
+        (data as Review[]).map(async (review) => {
+          if (review.photos && review.photos.length > 0) {
+            const signedPhotos = await getSignedPhotoUrls(review.photos);
+            return { ...review, photos: signedPhotos };
+          }
+          return review;
+        })
+      );
+
+      setReviews(reviewsWithSignedUrls);
 
       // Extract unique categories
-      const uniqueCategories = [...new Set(typedData.map(r => r.service?.category).filter(Boolean))] as string[];
+      const uniqueCategories = [...new Set(reviewsWithSignedUrls.map(r => r.service?.category).filter(Boolean))] as string[];
       setCategories(uniqueCategories);
     } catch (error) {
       console.error("Error fetching reviews:", error);
