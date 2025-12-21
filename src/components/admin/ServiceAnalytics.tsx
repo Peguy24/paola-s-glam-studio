@@ -303,10 +303,13 @@ export function ServiceAnalytics() {
     setPreviousPeriodSummary(previousSummary);
   };
 
-  const getPercentageChange = (current: number, previous: number): { value: number; isPositive: boolean } => {
-    if (previous === 0) return { value: current > 0 ? 100 : 0, isPositive: current >= 0 };
+  const getPercentageChange = (current: number, previous: number): { value: number; isPositive: boolean; hasData: boolean } => {
+    // When both are 0, indicate no data available
+    if (current === 0 && previous === 0) return { value: 0, isPositive: true, hasData: false };
+    // When previous is 0 but current has value, show 100% increase
+    if (previous === 0) return { value: 100, isPositive: true, hasData: true };
     const change = ((current - previous) / previous) * 100;
-    return { value: Math.abs(change), isPositive: change >= 0 };
+    return { value: Math.abs(change), isPositive: change >= 0, hasData: true };
   };
 
   const getComparisonPeriodLabel = () => {
@@ -545,16 +548,24 @@ export function ServiceAnalytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Revenue Change</CardTitle>
-                {revenueChange.isPositive ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                {revenueChange.hasData ? (
+                  revenueChange.isPositive ? (
+                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-red-500" />
+                  )
                 ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 )}
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${revenueChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {revenueChange.isPositive ? '+' : '-'}{revenueChange.value.toFixed(1)}%
-                </div>
+                {revenueChange.hasData ? (
+                  <div className={`text-2xl font-bold ${revenueChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {revenueChange.isPositive ? '+' : '-'}{revenueChange.value.toFixed(1)}%
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-muted-foreground">No data</div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   ${currentPeriodSummary.revenue.toFixed(0)} vs ${previousPeriodSummary.revenue.toFixed(0)}
                 </p>
@@ -569,16 +580,24 @@ export function ServiceAnalytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Bookings Change</CardTitle>
-                {bookingsChange.isPositive ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                {bookingsChange.hasData ? (
+                  bookingsChange.isPositive ? (
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                  )
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 )}
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${bookingsChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {bookingsChange.isPositive ? '+' : '-'}{bookingsChange.value.toFixed(1)}%
-                </div>
+                {bookingsChange.hasData ? (
+                  <div className={`text-2xl font-bold ${bookingsChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {bookingsChange.isPositive ? '+' : '-'}{bookingsChange.value.toFixed(1)}%
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-muted-foreground">No data</div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {currentPeriodSummary.bookings} vs {previousPeriodSummary.bookings} bookings
                 </p>
@@ -593,16 +612,24 @@ export function ServiceAnalytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Completed Change</CardTitle>
-                {completedChange.isPositive ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                {completedChange.hasData ? (
+                  completedChange.isPositive ? (
+                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <ArrowDownRight className="h-4 w-4 text-red-500" />
+                  )
                 ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-500" />
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 )}
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${completedChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {completedChange.isPositive ? '+' : '-'}{completedChange.value.toFixed(1)}%
-                </div>
+                {completedChange.hasData ? (
+                  <div className={`text-2xl font-bold ${completedChange.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {completedChange.isPositive ? '+' : '-'}{completedChange.value.toFixed(1)}%
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-muted-foreground">No data</div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {currentPeriodSummary.completed} vs {previousPeriodSummary.completed} completed
                 </p>
