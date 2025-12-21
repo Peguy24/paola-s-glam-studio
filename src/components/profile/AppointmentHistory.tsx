@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { getSignedPhotoUrls } from "@/lib/storage";
 
 interface Appointment {
   id: string;
@@ -122,7 +123,21 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
       return;
     }
 
-    setAppointments(data as unknown as Appointment[]);
+    // Convert photo URLs to signed URLs for display
+    const appointmentsWithSignedUrls = await Promise.all(
+      (data as unknown as Appointment[]).map(async (appointment) => {
+        if (appointment.ratings && appointment.ratings.length > 0 && appointment.ratings[0].photos) {
+          const signedPhotos = await getSignedPhotoUrls(appointment.ratings[0].photos);
+          return {
+            ...appointment,
+            ratings: [{ ...appointment.ratings[0], photos: signedPhotos }]
+          };
+        }
+        return appointment;
+      })
+    );
+
+    setAppointments(appointmentsWithSignedUrls);
     setLoading(false);
   };
 
@@ -149,12 +164,19 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
     fetchAppointments();
   };
 
-  const openRatingDialog = (appointment: Appointment) => {
+  const openRatingDialog = async (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     if (appointment.ratings && appointment.ratings.length > 0) {
       setRating(appointment.ratings[0].rating);
       setReview(appointment.ratings[0].review || "");
-      setExistingPhotos(appointment.ratings[0].photos || []);
+      // Get signed URLs for existing photos
+      const photos = appointment.ratings[0].photos || [];
+      if (photos.length > 0) {
+        const signedUrls = await getSignedPhotoUrls(photos);
+        setExistingPhotos(signedUrls);
+      } else {
+        setExistingPhotos([]);
+      }
     } else {
       setRating(0);
       setReview("");
@@ -217,11 +239,11 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
         throw uploadError;
       }
       
-      const { data: { publicUrl } } = supabase.storage
-        .from('review-photos')
-        .getPublicUrl(fileName);
-      
-      uploadedUrls.push(publicUrl);
+      // Store the path reference (we'll generate signed URLs when displaying)
+      // Using a format that can be parsed by getSignedPhotoUrl
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const storedUrl = `${baseUrl}/storage/v1/object/public/review-photos/${fileName}`;
+      uploadedUrls.push(storedUrl);
     }
     
     return uploadedUrls;
