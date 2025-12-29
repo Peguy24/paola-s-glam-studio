@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.process-recurring-patterns]
 verify_jwt = true
+
+[functions.notify-appointment-change]
+verify_jwt = false
+
+[functions.notify-appointment-status]
+verify_jwt = false
