@@ -160,6 +160,10 @@ const AppointmentsList = () => {
   };
 
   const updateStatus = async (appointmentId: string, newStatus: string) => {
+    // Get the current status before updating
+    const currentAppointment = appointments.find(a => a.id === appointmentId);
+    const previousStatus = currentAppointment?.status;
+
     const { error } = await supabase
       .from("appointments")
       .update({ status: newStatus })
@@ -174,6 +178,21 @@ const AppointmentsList = () => {
       return;
     }
 
+    // Send status notification via email/SMS
+    try {
+      await supabase.functions.invoke("notify-appointment-status", {
+        body: { 
+          appointmentId,
+          newStatus,
+          previousStatus
+        },
+      });
+      console.log(`Status notification sent for appointment: ${appointmentId} (${previousStatus} -> ${newStatus})`);
+    } catch (error) {
+      console.error("Failed to send status notification:", error);
+      // Don't block the status update if notification fails
+    }
+
     // Send review reminder when appointment is marked as completed
     if (newStatus === "completed") {
       try {
@@ -183,7 +202,6 @@ const AppointmentsList = () => {
         console.log("Review reminder sent for appointment:", appointmentId);
       } catch (error) {
         console.error("Failed to send review reminder:", error);
-        // Don't show error to admin - reminder is sent in background
       }
     }
 
