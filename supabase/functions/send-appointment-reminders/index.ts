@@ -108,7 +108,7 @@ serve(async (req: Request): Promise<Response> => {
 
         // Send email via Resend
         const emailResult = await resend.emails.send({
-          from: "Paola Beauty Glam <onboarding@resend.dev>",
+          from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
           to: [profile.email],
           subject: "Reminder: Your Appointment Tomorrow",
           html: emailHtml,

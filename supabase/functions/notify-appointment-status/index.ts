@@ -250,7 +250,7 @@ const handler = async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Paola Beauty Glam <onboarding@resend.dev>",
+          from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
           to: [clientEmail],
           subject: subject,
           html: htmlContent,
