@@ -229,14 +229,14 @@ const BookingCalendar = () => {
 
     const selectedService = services.find(s => s.id === selectedServiceId);
 
-    const { error } = await supabase.from("appointments").insert({
+    const { data: appointmentData, error } = await supabase.from("appointments").insert({
       client_id: user.id,
       slot_id: selectedSlot,
       service_id: selectedServiceId,
       service_type: selectedService?.name || "",
       notes: notes || null,
       status: "pending",
-    });
+    }).select("id").single();
 
     if (error) {
       toast({
@@ -245,9 +245,19 @@ const BookingCalendar = () => {
         variant: "destructive",
       });
     } else {
+      // Send booking confirmation email to customer
+      try {
+        await supabase.functions.invoke("send-booking-confirmation", {
+          body: { appointmentId: appointmentData.id },
+        });
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // Don't show error to user, booking was still successful
+      }
+
       toast({
         title: "Success",
-        description: "Your appointment has been booked!",
+        description: "Your appointment has been booked! Check your email for confirmation.",
       });
       setSelectedSlot("");
       setSelectedServiceId("");
