@@ -293,7 +293,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`No phone number for client`);
     }
 
-    // Log notification to history
+    // Log client notification to history
     const notificationType = emailSuccess && smsSuccess ? 'both' : emailSuccess ? 'email' : smsSuccess ? 'sms' : 'email';
     const status = (emailSuccess || smsSuccess) ? 'sent' : 'failed';
     const errorMessage = emailError || smsError ? `Email: ${emailError || 'N/A'}, SMS: ${smsError || 'N/A'}` : null;
@@ -314,6 +314,79 @@ const handler = async (req: Request): Promise<Response> => {
         new_status: newStatus,
       }
     });
+
+    // Send SMS notifications to admin users
+    if (smsEnabled) {
+      // Fetch admin users with phone numbers
+      const { data: adminRoles, error: adminRolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (!adminRolesError && adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r) => r.user_id);
+        
+        const { data: adminProfiles, error: adminProfilesError } = await supabase
+          .from("profiles")
+          .select("email, full_name, phone")
+          .in("id", adminUserIds);
+
+        if (!adminProfilesError && adminProfiles) {
+          for (const admin of adminProfiles) {
+            if (!admin.phone) continue;
+
+            const adminSmsBody = `📋 Status Update!\n\nClient: ${clientName}\nService: ${serviceName}\nDate: ${slot.date}\nTime: ${slot.start_time.slice(0, 5)}\n\nStatus: ${previousStatus || 'N/A'} → ${newStatus.toUpperCase()}`;
+
+            const adminSmsResult = await sendSMS(
+              admin.phone,
+              adminSmsBody,
+              twilioAccountSid!,
+              twilioAuthToken!,
+              twilioPhoneNumber!
+            );
+
+            if (adminSmsResult.success) {
+              console.log(`Admin SMS notification sent to ${admin.phone} for status change: ${newStatus}`);
+              
+              await supabase.from('notification_history').insert({
+                appointment_id: appointmentId,
+                notification_type: 'sms',
+                change_type: `admin_status_${changeType}`,
+                recipient_phone: admin.phone,
+                status: 'sent',
+                metadata: {
+                  admin_email: admin.email,
+                  client_name: clientName,
+                  service_name: serviceName,
+                  appointment_date: slot.date,
+                  previous_status: previousStatus,
+                  new_status: newStatus,
+                },
+              });
+            } else {
+              console.error(`Failed to send admin SMS to ${admin.phone}:`, adminSmsResult.error);
+              
+              await supabase.from('notification_history').insert({
+                appointment_id: appointmentId,
+                notification_type: 'sms',
+                change_type: `admin_status_${changeType}`,
+                recipient_phone: admin.phone,
+                status: 'failed',
+                error_message: adminSmsResult.error,
+                metadata: {
+                  admin_email: admin.email,
+                  client_name: clientName,
+                  service_name: serviceName,
+                  appointment_date: slot.date,
+                  previous_status: previousStatus,
+                  new_status: newStatus,
+                },
+              });
+            }
+          }
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({ 
