@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle, Download, FileText, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle, Download, FileText, Loader2, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -34,6 +35,14 @@ interface Appointment {
   };
 }
 
+interface AvailableSlot {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  current_bookings?: number;
+}
 const statusColors = {
   pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   confirmed: "bg-green-500/10 text-green-500 border-green-500/20",
@@ -59,6 +68,12 @@ const AppointmentsList = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [exporting, setExporting] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
+  const [selectedNewSlot, setSelectedNewSlot] = useState<string>("");
+  const [rescheduling, setRescheduling] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -216,6 +231,120 @@ const AppointmentsList = () => {
 
   const handleFilterChange = (value: string) => {
     setStatusFilter(value);
+  };
+
+  const openRescheduleDialog = async (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setSelectedNewSlot("");
+    setRescheduleDialogOpen(true);
+    setLoadingSlots(true);
+
+    // Fetch available slots (future dates only, excluding current slot)
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data: slots, error } = await supabase
+      .from("availability_slots")
+      .select("id, date, start_time, end_time, capacity")
+      .eq("is_available", true)
+      .gte("date", today)
+      .neq("id", appointment.slot.date) // Exclude current slot's date
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch available slots",
+        variant: "destructive",
+      });
+      setLoadingSlots(false);
+      return;
+    }
+
+    // Get booking counts for each slot
+    const slotIds = slots?.map(s => s.id) || [];
+    const { data: bookings } = await supabase
+      .from("appointments")
+      .select("slot_id")
+      .in("slot_id", slotIds)
+      .in("status", ["pending", "confirmed"]);
+
+    const bookingCounts: Record<string, number> = {};
+    bookings?.forEach(b => {
+      bookingCounts[b.slot_id] = (bookingCounts[b.slot_id] || 0) + 1;
+    });
+
+    // Filter slots that have available capacity
+    const availableSlotsWithCapacity = slots?.filter(slot => {
+      const currentBookings = bookingCounts[slot.id] || 0;
+      return currentBookings < slot.capacity;
+    }).map(slot => ({
+      ...slot,
+      current_bookings: bookingCounts[slot.id] || 0,
+    })) || [];
+
+    setAvailableSlots(availableSlotsWithCapacity);
+    setLoadingSlots(false);
+  };
+
+  const handleReschedule = async () => {
+    if (!selectedAppointment || !selectedNewSlot) return;
+
+    setRescheduling(true);
+
+    const oldSlotId = (selectedAppointment as any).slot_id || selectedAppointment.id;
+    const newSlot = availableSlots.find(s => s.id === selectedNewSlot);
+
+    // Update the appointment with the new slot
+    const { error: updateError } = await supabase
+      .from("appointments")
+      .update({ slot_id: selectedNewSlot })
+      .eq("id", selectedAppointment.id);
+
+    if (updateError) {
+      toast({
+        title: "Error",
+        description: "Failed to reschedule appointment",
+        variant: "destructive",
+      });
+      setRescheduling(false);
+      return;
+    }
+
+    // Send notifications about the reschedule
+    try {
+      // We need to get the old slot details for the notification
+      const { data: oldSlotData } = await supabase
+        .from("availability_slots")
+        .select("id")
+        .eq("date", selectedAppointment.slot.date)
+        .eq("start_time", selectedAppointment.slot.start_time)
+        .single();
+
+      if (oldSlotData && newSlot) {
+        await supabase.functions.invoke("notify-appointment-change", {
+          body: {
+            slotId: oldSlotData.id,
+            changeType: "modified",
+            newDate: newSlot.date,
+            newStartTime: newSlot.start_time,
+            newEndTime: newSlot.end_time,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to send reschedule notification:", error);
+    }
+
+    toast({
+      title: "Success",
+      description: "Appointment rescheduled successfully",
+    });
+
+    setRescheduleDialogOpen(false);
+    setSelectedAppointment(null);
+    setRescheduling(false);
+    fetchAppointments(true);
   };
 
   const fetchAllAppointmentsForExport = async (): Promise<Appointment[]> => {
@@ -556,6 +685,18 @@ const AppointmentsList = () => {
                   <SelectItem value="cancelled" className="text-xs sm:text-sm">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {(appointment.status === "pending" || appointment.status === "confirmed") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openRescheduleDialog(appointment)}
+                  className="w-full sm:w-auto"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reschedule
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -575,6 +716,90 @@ const AppointmentsList = () => {
         )}
       </div>
       )}
+
+      {/* Reschedule Dialog */}
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>
+              {selectedAppointment && (
+                <>
+                  Reschedule <strong>{selectedAppointment.profile.full_name}'s</strong> appointment for{" "}
+                  <strong>{selectedAppointment.service?.name || selectedAppointment.service_type}</strong>
+                  <br />
+                  Current: {format(new Date(selectedAppointment.slot.date), "MMM d, yyyy")} at{" "}
+                  {selectedAppointment.slot.start_time.slice(0, 5)}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {loadingSlots ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Loading available slots...</span>
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No available slots found. Please create new availability slots first.
+              </p>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {availableSlots.map((slot) => (
+                  <div
+                    key={slot.id}
+                    onClick={() => setSelectedNewSlot(slot.id)}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedNewSlot === slot.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {format(new Date(slot.date), "EEEE, MMM d, yyyy")}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {slot.start_time.slice(0, 5)} - {slot.end_time.slice(0, 5)}
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {slot.capacity - (slot.current_bookings || 0)} spots left
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRescheduleDialogOpen(false)}
+              disabled={rescheduling}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleReschedule}
+              disabled={!selectedNewSlot || rescheduling}
+            >
+              {rescheduling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Rescheduling...
+                </>
+              ) : (
+                "Confirm Reschedule"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

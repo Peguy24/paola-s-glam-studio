@@ -253,7 +253,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`No phone number for appointment ${appointment.id}`);
       }
 
-      // Log notification to history
+      // Log client notification to history
       const notificationType = emailSuccess && smsSuccess ? 'both' : emailSuccess ? 'email' : smsSuccess ? 'sms' : 'email';
       const status = (emailSuccess || smsSuccess) ? 'sent' : 'failed';
       const errorMessage = emailError || smsError ? `Email: ${emailError || 'N/A'}, SMS: ${smsError || 'N/A'}` : null;
@@ -278,6 +278,65 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     await Promise.all(emailPromises);
+
+    // Send SMS notifications to admin users
+    if (smsEnabled) {
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (adminRoles && adminRoles.length > 0) {
+        const adminUserIds = adminRoles.map((r) => r.user_id);
+        
+        const { data: adminProfiles } = await supabase
+          .from("profiles")
+          .select("email, full_name, phone")
+          .in("id", adminUserIds);
+
+        if (adminProfiles) {
+          for (const admin of adminProfiles) {
+            if (!admin.phone) continue;
+
+            const firstAppointment = appointments[0] as any;
+            const originalSlot = firstAppointment?.slot;
+            const changeLabel = changeType === "cancelled" ? "CANCELLED" : "RESCHEDULED";
+            const newTimeInfo = newDate && newStartTime ? `\nNew: ${newDate} at ${newStartTime}` : '';
+            
+            const adminSmsBody = `📅 Slot ${changeLabel}!\n\nOriginal: ${originalSlot?.date} at ${originalSlot?.start_time}\n${newTimeInfo}\n\n${appointments.length} appointment(s) affected.`;
+
+            const adminSmsResult = await sendSMS(
+              admin.phone,
+              adminSmsBody,
+              twilioAccountSid!,
+              twilioAuthToken!,
+              twilioPhoneNumber!
+            );
+
+            if (adminSmsResult.success) {
+              console.log(`Admin SMS notification sent to ${admin.phone} for slot change`);
+              
+              await supabase.from('notification_history').insert({
+                notification_type: 'sms',
+                change_type: `admin_slot_${changeType}`,
+                recipient_phone: admin.phone,
+                status: 'sent',
+                metadata: {
+                  admin_email: admin.email,
+                  original_date: originalSlot?.date,
+                  original_time: originalSlot?.start_time,
+                  new_date: newDate,
+                  new_time: newStartTime,
+                  affected_appointments: appointments.length,
+                },
+              });
+            } else {
+              console.error(`Failed to send admin SMS to ${admin.phone}:`, adminSmsResult.error);
+            }
+          }
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({ message: `Notifications sent to ${appointments.length} client(s)` }),
