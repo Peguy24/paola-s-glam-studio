@@ -4,11 +4,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Clock, Calendar as CalendarIcon } from "lucide-react";
+import { Clock, Calendar as CalendarIcon, Phone } from "lucide-react";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -45,6 +46,11 @@ const bookingSchema = z.object({
     .max(500, { message: "Notes must be less than 500 characters" })
     .optional()
     .or(z.literal("")),
+  phone: z
+    .string()
+    .min(10, { message: "Please enter a valid phone number" })
+    .max(20, { message: "Phone number is too long" })
+    .regex(/^[\d\s\-\+\(\)]+$/, { message: "Please enter a valid phone number" }),
 });
 
 const BookingCalendar = () => {
@@ -54,6 +60,8 @@ const BookingCalendar = () => {
   const [selectedServiceId, setSelectedServiceId] = useState<string>("");
   const [services, setServices] = useState<Service[]>([]);
   const [notes, setNotes] = useState("");
+  const [phone, setPhone] = useState("");
+  const [existingPhone, setExistingPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
@@ -61,7 +69,24 @@ const BookingCalendar = () => {
 
   useEffect(() => {
     fetchServices();
+    fetchUserPhone();
   }, []);
+
+  const fetchUserPhone = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.phone) {
+      setPhone(profile.phone);
+      setExistingPhone(profile.phone);
+    }
+  };
 
   useEffect(() => {
     if (date) {
@@ -151,8 +176,8 @@ const BookingCalendar = () => {
       return;
     }
 
-    // Validate notes input
-    const validationResult = bookingSchema.safeParse({ notes });
+    // Validate inputs
+    const validationResult = bookingSchema.safeParse({ notes, phone });
     if (!validationResult.success) {
       toast({
         title: "Validation error",
@@ -174,6 +199,26 @@ const BookingCalendar = () => {
       });
       setLoading(false);
       return;
+    }
+
+    // Format phone number with country code if not present
+    let formattedPhone = phone.replace(/[\s\-\(\)]/g, '');
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+1' + formattedPhone; // Default to US country code
+    }
+
+    // Update user's phone number if it's new or different
+    if (formattedPhone !== existingPhone) {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ phone: formattedPhone })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Failed to update phone:", updateError);
+      } else {
+        setExistingPhone(formattedPhone);
+      }
     }
 
     // Rate limiting: Check how many bookings the user has made in the last hour
@@ -323,6 +368,26 @@ const BookingCalendar = () => {
       )}
 
       <div className="space-y-2">
+        <Label htmlFor="phone" className="text-sm sm:text-base flex items-center gap-1">
+          <Phone className="h-4 w-4" />
+          Phone Number <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="phone"
+          type="tel"
+          placeholder="(267) 343-1794"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          maxLength={20}
+          className="text-sm sm:text-base"
+          required
+        />
+        <p className="text-xs text-muted-foreground">
+          Required for SMS appointment notifications
+        </p>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="notes" className="text-sm sm:text-base">Notes (Optional)</Label>
         <Textarea
           id="notes"
@@ -383,7 +448,7 @@ const BookingCalendar = () => {
             <DrawerFooter className="pt-2">
               <Button
                 onClick={handleBooking}
-                disabled={loading || !selectedSlot || !selectedServiceId}
+                disabled={loading || !selectedSlot || !selectedServiceId || !phone}
                 className="w-full"
                 size="lg"
               >
@@ -408,7 +473,7 @@ const BookingCalendar = () => {
             <BookingDetailsContent />
             <Button
               onClick={handleBooking}
-              disabled={loading || !selectedSlot || !selectedServiceId}
+              disabled={loading || !selectedSlot || !selectedServiceId || !phone}
               className="w-full text-sm sm:text-base py-2 sm:py-3"
             >
               {loading ? "Booking..." : "Book Appointment"}
