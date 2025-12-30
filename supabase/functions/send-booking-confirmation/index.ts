@@ -178,7 +178,7 @@ serve(async (req: Request): Promise<Response> => {
       `;
 
       const customerEmailResult = await resend.emails.send({
-        from: "Paola Beauty Glam <onboarding@resend.dev>",
+        from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
         to: [customerEmail],
         subject: `Booking Confirmed - ${serviceName} on ${appointmentDate}`,
         html: customerEmailHtml,
@@ -315,7 +315,7 @@ serve(async (req: Request): Promise<Response> => {
 
           try {
             const adminEmailResult = await resend.emails.send({
-              from: "Paola Beauty Glam <onboarding@resend.dev>",
+              from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
               to: [admin.email],
               subject: `🆕 New Booking: ${customerName} - ${serviceName}`,
               html: adminEmailHtml,
