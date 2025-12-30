@@ -11,6 +11,44 @@ interface BookingConfirmationRequest {
   appointmentId: string;
 }
 
+// Helper function to send SMS via Twilio
+async function sendSMS(
+  accountSid: string,
+  authToken: string,
+  fromNumber: string,
+  toNumber: string,
+  message: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const auth = btoa(`${accountSid}:${authToken}`);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        To: toNumber,
+        From: fromNumber,
+        Body: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Twilio SMS error:', errorData);
+      return { success: false, error: errorData };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -20,6 +58,16 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    
+    // Twilio credentials for SMS
+    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+    
+    const smsEnabled = twilioAccountSid && twilioAuthToken && twilioPhoneNumber;
+    if (!smsEnabled) {
+      console.log("Twilio not configured - SMS notifications will be skipped");
+    }
 
     if (!resendApiKey) {
       console.error("RESEND_API_KEY not configured");
@@ -216,7 +264,7 @@ serve(async (req: Request): Promise<Response> => {
       
       const { data: adminProfiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("email, full_name")
+        .select("email, full_name, phone")
         .in("id", adminUserIds);
 
       if (profilesError) {
@@ -338,6 +386,52 @@ serve(async (req: Request): Promise<Response> => {
             });
           } catch (adminEmailError) {
             console.error("Failed to send admin notification to:", admin.email, adminEmailError);
+          }
+          
+          // Send SMS notification to admin if phone number available and Twilio configured
+          if (smsEnabled && admin.phone) {
+            const smsBody = `🆕 New Booking!\n\nCustomer: ${customerName}\nService: ${serviceName}\nDate: ${appointmentDate}\nTime: ${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}\n\nPlease log in to confirm.`;
+            
+            const smsResult = await sendSMS(
+              twilioAccountSid!,
+              twilioAuthToken!,
+              twilioPhoneNumber!,
+              admin.phone,
+              smsBody
+            );
+            
+            if (smsResult.success) {
+              console.log("Admin SMS notification sent to:", admin.phone);
+              
+              await supabase.from("notification_history").insert({
+                appointment_id: appointmentId,
+                notification_type: "sms",
+                change_type: "admin_new_booking_notification",
+                recipient_phone: admin.phone,
+                status: "sent",
+                metadata: {
+                  customer_name: customerName,
+                  service: serviceName,
+                  date: appointmentDate,
+                },
+              });
+            } else {
+              console.error("Failed to send admin SMS to:", admin.phone, smsResult.error);
+              
+              await supabase.from("notification_history").insert({
+                appointment_id: appointmentId,
+                notification_type: "sms",
+                change_type: "admin_new_booking_notification",
+                recipient_phone: admin.phone,
+                status: "failed",
+                error_message: smsResult.error,
+                metadata: {
+                  customer_name: customerName,
+                  service: serviceName,
+                  date: appointmentDate,
+                },
+              });
+            }
           }
         }
       }
