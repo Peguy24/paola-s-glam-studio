@@ -1,73 +1,40 @@
-# Welcome to your Lovable project
+Paola Beauty Glam
 
-## Project info
+Welcome to Paola Beauty Glam — your destination for beauty, style, and self-expression.
+This project represents a modern, luxury beauty services website designed to showcase premium beauty experiences, services, and products online.
 
-**URL**: https://lovable.dev/projects/f9242a4d-4196-46b8-9766-c152904cfe79
+✨ About the Site
 
-## How can I edit this code?
+Paola Beauty Glam offers:
 
-There are several ways of editing your application.
+✂️ Beauty Services (hair styling, makeup, nails, skincare & more)
 
-**Use Lovable**
+💄 Glamour & Self-Care Inspiration for clients and visitors
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f9242a4d-4196-46b8-9766-c152904cfe79) and start prompting.
+📍 A visually engaging homepage encouraging exploration of services
 
-Changes made via Lovable will be committed automatically to this repo.
+🌟 A professional aesthetic consistent with beauty brands
 
-**Use your preferred IDE**
+The site invites users to “unleash your inner glamour” and explore beauty services in a stunning digital experience.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🛠️ Technologies Used
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+While the site’s internal tech stack isn’t publicly documented, it likely uses:
 
-Follow these steps:
+HTML/CSS/Javascript for responsive user interface
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+A CMS or e-commerce platform for content and product/service management
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Visual assets and branding elements to reflect beauty industry design standards
 
-# Step 3: Install the necessary dependencies.
-npm i
+Developers can adapt this structure for similar portfolio or business websites.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+📋 Features
 
-**Edit a file directly in GitHub**
+✨ Homepage with visual highlights
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+📸 Rich images and branding elements showcasing beauty offerings
 
-**Use GitHub Codespaces**
+🧑‍🎨 Focus on aesthetics, glamor, and client experience
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f9242a4d-4196-46b8-9766-c152904cfe79) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+🔗 Navigation to engagement channels (contact, social profiles)
