@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle, Download, FileText, Loader2, RefreshCw } from "lucide-react";
+import { Calendar, Clock, User, Mail, Phone, CheckCircle, XCircle, Clock3, AlertCircle, Download, FileText, Loader2, RefreshCw, CreditCard, Banknote } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -16,6 +16,7 @@ interface Appointment {
   id: string;
   service_type: string;
   status: string;
+  payment_status: string;
   notes: string | null;
   created_at: string;
   service: {
@@ -48,6 +49,18 @@ const statusColors = {
   confirmed: "bg-green-500/10 text-green-500 border-green-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
   completed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+};
+
+const paymentStatusColors = {
+  pending: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  pay_later: "bg-slate-500/10 text-slate-500 border-slate-500/20",
+};
+
+const paymentStatusLabels = {
+  pending: "Payment Pending",
+  paid: "Paid",
+  pay_later: "Pay at Salon",
 };
 
 const statusIcons = {
@@ -116,6 +129,7 @@ const AppointmentsList = () => {
         id,
         service_type,
         status,
+        payment_status,
         notes,
         created_at,
         service:service_id (
@@ -354,6 +368,7 @@ const AppointmentsList = () => {
         id,
         service_type,
         status,
+        payment_status,
         notes,
         created_at,
         service:service_id (
@@ -638,9 +653,19 @@ const AppointmentsList = () => {
                   </div>
                 </CardDescription>
               </div>
-              <Badge className={`${statusColors[appointment.status as keyof typeof statusColors]} whitespace-nowrap self-start`}>
-                {appointment.status}
-              </Badge>
+              <div className="flex flex-col gap-2 self-start">
+                <Badge className={`${statusColors[appointment.status as keyof typeof statusColors]} whitespace-nowrap`}>
+                  {appointment.status}
+                </Badge>
+                <Badge className={`${paymentStatusColors[appointment.payment_status as keyof typeof paymentStatusColors]} whitespace-nowrap flex items-center gap-1`}>
+                  {appointment.payment_status === "paid" ? (
+                    <CreditCard className="h-3 w-3" />
+                  ) : (
+                    <Banknote className="h-3 w-3" />
+                  )}
+                  {paymentStatusLabels[appointment.payment_status as keyof typeof paymentStatusLabels] || appointment.payment_status}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4 pt-0">
