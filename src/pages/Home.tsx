@@ -6,11 +6,29 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 import brandPhoto from "@/assets/brand-photo.jpeg";
 import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+
+// Import glamour hero images
+import glamour1 from "@/assets/hero/glamour-1.jpg";
+import glamour2 from "@/assets/hero/glamour-2.jpg";
+import glamour3 from "@/assets/hero/glamour-3.jpg";
+import glamour4 from "@/assets/hero/glamour-4.jpg";
+
+const heroImages = [
+  { src: glamour1, alt: "Glamorous beauty transformation" },
+  { src: glamour2, alt: "Professional beauty styling" },
+  { src: glamour3, alt: "Stunning beauty looks" },
+  { src: glamour4, alt: "Premium beauty experience" },
+];
 
 interface Transformation {
   id: string;
@@ -143,13 +161,43 @@ const Home = () => {
               </div>
             </div>
             
+            {/* Glamour Hero Carousel */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-2xl" />
-              <img
-                src={logo}
-                alt="Paola Beauty Glam"
-                className="relative rounded-3xl w-full object-cover shadow-2xl ring-1 ring-border"
-              />
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: true,
+                }}
+                plugins={[
+                  Autoplay({
+                    delay: 3500,
+                    stopOnInteraction: false,
+                  }),
+                ]}
+                className="relative rounded-3xl overflow-hidden shadow-2xl ring-1 ring-border"
+              >
+                <CarouselContent className="-ml-0">
+                  {heroImages.map((image, index) => (
+                    <CarouselItem key={index} className="pl-0">
+                      <div className="relative aspect-[3/4] sm:aspect-[4/5] w-full overflow-hidden">
+                        <img
+                          src={image.src}
+                          alt={image.alt}
+                          className="w-full h-full object-cover object-top"
+                        />
+                        {/* Subtle gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-transparent" />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+              
+              {/* Decorative sparkle elements */}
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-gold rounded-full animate-pulse opacity-80" />
+              <div className="absolute top-1/4 -left-3 w-3 h-3 bg-primary rounded-full animate-pulse opacity-60" />
+              <div className="absolute bottom-1/4 -right-2 w-2 h-2 bg-secondary rounded-full animate-pulse opacity-70" />
             </div>
           </div>
         </div>
