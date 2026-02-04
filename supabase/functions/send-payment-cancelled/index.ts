@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import Twilio from "https://esm.sh/twilio@4.19.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,33 @@ const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-PAYMENT-CANCELLED] ${step}${detailsStr}`);
 };
+
+// Helper function to send SMS via Twilio
+async function sendSMS(to: string, message: string): Promise<boolean> {
+  try {
+    const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+    if (!accountSid || !authToken || !fromNumber) {
+      logStep("Twilio credentials not configured");
+      return false;
+    }
+
+    const client = Twilio(accountSid, authToken);
+    const result = await client.messages.create({
+      body: message,
+      from: fromNumber,
+      to: to,
+    });
+
+    logStep("SMS sent successfully", { sid: result.sid, to });
+    return true;
+  } catch (error) {
+    logStep("Failed to send SMS", { error: String(error) });
+    return false;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -183,6 +211,20 @@ serve(async (req) => {
       `,
     });
     logStep("Admin email sent", { result: adminEmailResult });
+
+    // Send SMS to client if phone number is available
+    const clientPhone = appointment.profiles?.phone;
+    if (clientPhone) {
+      const shortDate = appointmentDate 
+        ? new Date(appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : "";
+      
+      const smsMessage = `Paola Beauty Glam: Your payment for ${serviceName} on ${shortDate} at ${formattedTime} was not completed. Please visit our website to retry. Questions? Contact us!`;
+      
+      await sendSMS(clientPhone, smsMessage);
+    } else {
+      logStep("No phone number available for SMS");
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
