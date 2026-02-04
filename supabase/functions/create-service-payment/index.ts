@@ -87,7 +87,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/appointments?payment=success&appointment_id=${appointmentId}`,
+      success_url: `${origin}/payment-success?appointment_id=${appointmentId}`,
       cancel_url: `${origin}/appointments?payment=cancelled&appointment_id=${appointmentId}`,
       metadata: {
         appointment_id: appointmentId,
