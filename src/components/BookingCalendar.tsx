@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Clock, Calendar as CalendarIcon, Phone } from "lucide-react";
+import { Clock, Calendar as CalendarIcon, Phone, CreditCard, Wallet } from "lucide-react";
 import { z } from "zod";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -62,6 +63,7 @@ const BookingCalendar = () => {
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState("");
   const [existingPhone, setExistingPhone] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_later">("pay_later");
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
@@ -274,6 +276,9 @@ const BookingCalendar = () => {
 
     const selectedService = services.find(s => s.id === selectedServiceId);
 
+    // Set payment status based on payment method choice
+    const paymentStatus = paymentMethod === "pay_now" ? "pending" : "pay_later";
+
     const { data: appointmentData, error } = await supabase.from("appointments").insert({
       client_id: user.id,
       slot_id: selectedSlot,
@@ -281,6 +286,7 @@ const BookingCalendar = () => {
       service_type: selectedService?.name || "",
       notes: notes || null,
       status: "pending",
+      payment_status: paymentStatus,
     }).select("id").single();
 
     if (error) {
@@ -289,27 +295,65 @@ const BookingCalendar = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      // Send booking confirmation email to customer
-      try {
-        await supabase.functions.invoke("send-booking-confirmation", {
-          body: { appointmentId: appointmentData.id },
-        });
-      } catch (emailError) {
-        console.error("Failed to send confirmation email:", emailError);
-        // Don't show error to user, booking was still successful
-      }
+      setLoading(false);
+      return;
+    }
 
+    // Send booking confirmation email to customer
+    try {
+      await supabase.functions.invoke("send-booking-confirmation", {
+        body: { appointmentId: appointmentData.id },
+      });
+    } catch (emailError) {
+      console.error("Failed to send confirmation email:", emailError);
+    }
+
+    // If pay now, redirect to Stripe checkout
+    if (paymentMethod === "pay_now" && selectedService) {
+      try {
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+          "create-service-payment",
+          {
+            body: {
+              appointmentId: appointmentData.id,
+              serviceName: selectedService.name,
+              servicePrice: selectedService.price,
+              returnUrl: window.location.origin,
+            },
+          }
+        );
+
+        if (paymentError) throw paymentError;
+
+        if (paymentData?.url) {
+          // Open Stripe checkout in new tab
+          window.open(paymentData.url, "_blank");
+          toast({
+            title: "Redirecting to payment",
+            description: "Complete your payment in the new tab. Your appointment is reserved.",
+          });
+        }
+      } catch (paymentError) {
+        console.error("Failed to create payment session:", paymentError);
+        toast({
+          title: "Payment setup failed",
+          description: "Your appointment is booked. You can pay at the salon.",
+          variant: "destructive",
+        });
+      }
+    } else {
       toast({
         title: "Success",
-        description: "Your appointment has been booked! Check your email for confirmation.",
+        description: "Your appointment has been booked! Check your email for confirmation. You'll pay at the salon.",
       });
-      setSelectedSlot("");
-      setSelectedServiceId("");
-      setNotes("");
-      setDrawerOpen(false);
-      fetchAvailableSlots();
     }
+
+    setSelectedSlot("");
+    setSelectedServiceId("");
+    setNotes("");
+    setPaymentMethod("pay_later");
+    setDrawerOpen(false);
+    fetchAvailableSlots();
 
     setLoading(false);
   };
@@ -401,6 +445,36 @@ const BookingCalendar = () => {
         <p className="text-xs text-muted-foreground">
           {notes.length}/500 characters
         </p>
+      </div>
+
+      <div className="space-y-3">
+        <Label className="text-sm sm:text-base">Payment Option</Label>
+        <RadioGroup
+          value={paymentMethod}
+          onValueChange={(value) => setPaymentMethod(value as "pay_now" | "pay_later")}
+          className="grid grid-cols-1 gap-3"
+        >
+          <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer">
+            <RadioGroupItem value="pay_now" id="pay_now" />
+            <Label htmlFor="pay_now" className="flex items-center gap-2 cursor-pointer flex-1">
+              <CreditCard className="h-4 w-4 text-primary" />
+              <div>
+                <p className="font-medium text-sm sm:text-base">Pay Now</p>
+                <p className="text-xs text-muted-foreground">Secure online payment via Stripe</p>
+              </div>
+            </Label>
+          </div>
+          <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer">
+            <RadioGroupItem value="pay_later" id="pay_later" />
+            <Label htmlFor="pay_later" className="flex items-center gap-2 cursor-pointer flex-1">
+              <Wallet className="h-4 w-4 text-secondary" />
+              <div>
+                <p className="font-medium text-sm sm:text-base">Pay Later</p>
+                <p className="text-xs text-muted-foreground">Pay at the salon during your visit</p>
+              </div>
+            </Label>
+          </div>
+        </RadioGroup>
       </div>
     </>
   );
