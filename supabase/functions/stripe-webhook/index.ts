@@ -95,6 +95,28 @@ serve(async (req) => {
               logStep("Failed to update appointment", { error: updateError, appointmentId });
             } else {
               logStep("Appointment payment status updated to paid", { appointmentId });
+              
+              // Send payment confirmation emails
+              try {
+                const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+                const response = await fetch(`${supabaseUrl}/functions/v1/send-payment-confirmation`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  },
+                  body: JSON.stringify({ appointmentId }),
+                });
+                
+                if (response.ok) {
+                  logStep("Payment confirmation emails sent", { appointmentId });
+                } else {
+                  const errorText = await response.text();
+                  logStep("Failed to send payment confirmation emails", { error: errorText });
+                }
+              } catch (emailError) {
+                logStep("Error sending payment confirmation emails", { error: String(emailError) });
+              }
             }
           } else {
             logStep("No appointment_id in session metadata");
