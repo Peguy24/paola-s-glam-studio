@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Calendar, ShoppingBag, Star, Heart, Loader2 } from "lucide-react";
+import { Sparkles, Calendar, Star, Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import brandPhoto from "@/assets/brand-photo.jpeg";
-import { fetchProducts, ShopifyProduct } from "@/lib/shopify";
-import { useCartStore } from "@/stores/cartStore";
-import { toast } from "sonner";
 import {
   Carousel,
   CarouselContent,
@@ -41,24 +38,10 @@ interface Transformation {
 }
 
 const Home = () => {
-  const [featuredProducts, setFeaturedProducts] = useState<ShopifyProduct[]>([]);
   const [transformations, setTransformations] = useState<Transformation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [transformationsLoading, setTransformationsLoading] = useState(true);
-  const addItem = useCartStore(state => state.addItem);
 
   useEffect(() => {
-    const loadFeaturedProducts = async () => {
-      try {
-        const products = await fetchProducts(3);
-        setFeaturedProducts(products);
-      } catch (error) {
-        console.error('Error loading featured products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const loadTransformations = async () => {
       try {
         const { data, error } = await supabase
@@ -76,28 +59,8 @@ const Home = () => {
       }
     };
 
-    loadFeaturedProducts();
     loadTransformations();
   }, []);
-
-  const handleAddToCart = (product: ShopifyProduct) => {
-    const variant = product.node.variants.edges[0]?.node;
-    if (!variant) return;
-
-    const cartItem = {
-      product,
-      variantId: variant.id,
-      variantTitle: variant.title,
-      price: variant.price,
-      quantity: 1,
-      selectedOptions: variant.selectedOptions
-    };
-
-    addItem(cartItem);
-    toast.success("Added to cart", {
-      description: `${product.node.title} has been added to your cart.`,
-    });
-  };
 
   return (
     <div className="min-h-screen">
@@ -136,10 +99,10 @@ const Home = () => {
                     Book Now
                   </Button>
                 </Link>
-                <Link to="/products" className="w-full sm:w-auto">
+                <Link to="/services" className="w-full sm:w-auto">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto text-sm sm:text-base lg:text-lg px-5 sm:px-6 lg:px-8 border-2">
-                    <ShoppingBag className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Shop Products
+                    <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    View Services
                   </Button>
                 </Link>
               </div>
@@ -336,86 +299,6 @@ const Home = () => {
               <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)]">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Explore Our Services
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-12 sm:py-16 lg:py-20 px-4">
-        <div className="container mx-auto">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Featured Products</h2>
-            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-2xl mx-auto px-4">
-              Discover our handpicked selection of premium beauty essentials
-            </p>
-          </div>
-          
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : featuredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No featured products available yet</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {featuredProducts.map((product) => {
-                const image = product.node.images?.edges?.[0]?.node;
-                const price = product.node.priceRange.minVariantPrice;
-                
-                return (
-                  <Card key={product.node.id} className="overflow-hidden hover:shadow-[var(--shadow-elegant)] transition-all border-border/50">
-                    <Link to={`/product/${product.node.handle}`}>
-                      <CardContent className="p-0">
-                        {image ? (
-                          <img
-                            src={image.url}
-                            alt={image.altText || product.node.title}
-                            className="w-full h-72 object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-72 bg-secondary/20 flex items-center justify-center">
-                            <ShoppingBag className="h-16 w-16 text-muted-foreground" />
-                          </div>
-                        )}
-                      </CardContent>
-                    </Link>
-                    <CardFooter className="flex flex-col items-start gap-3 p-6">
-                      <div className="w-full">
-                        <Link to={`/product/${product.node.handle}`}>
-                          <h3 className="font-semibold text-xl hover:text-primary transition-colors">
-                            {product.node.title}
-                          </h3>
-                        </Link>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {product.node.description}
-                        </p>
-                        <p className="text-2xl font-bold text-primary mt-2">
-                          {price.currencyCode} {parseFloat(price.amount).toFixed(2)}
-                        </p>
-                      </div>
-                      <Button
-                        className="w-full"
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        Add to Cart
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-          
-          <div className="text-center mt-12">
-            <Link to="/products">
-              <Button size="lg" variant="outline" className="border-2">
-                View All Products
               </Button>
             </Link>
           </div>
