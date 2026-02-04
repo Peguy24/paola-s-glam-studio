@@ -57,6 +57,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     // Twilio credentials for SMS
@@ -77,15 +78,73 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Verify user authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create a client to verify the user's token
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
+    
+    if (claimsError || !claimsData?.user) {
+      console.error('Auth error:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const userId = claimsData.user.id;
+    console.log(`User ${userId} authorized for send-booking-confirmation`);
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
 
     const { appointmentId }: BookingConfirmationRequest = await req.json();
+    
+    // Verify the user owns this appointment or is an admin
+    const { data: isAdmin } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
+    
+    const { data: appointment, error: appointmentCheckError } = await supabase
+      .from("appointments")
+      .select("client_id")
+      .eq("id", appointmentId)
+      .single();
+    
+    if (appointmentCheckError || !appointment) {
+      console.error("Appointment not found:", appointmentCheckError);
+      return new Response(
+        JSON.stringify({ error: "Appointment not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Only allow if user owns the appointment or is an admin
+    if (appointment.client_id !== userId && !isAdmin) {
+      console.error(`User ${userId} not authorized to access appointment ${appointmentId}`);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Not authorized to access this appointment' }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Sending booking confirmation for appointment:", appointmentId);
 
-    // Fetch appointment details with related data
-    const { data: appointment, error: fetchError } = await supabase
+    // Fetch full appointment details with related data
+    const { data: appointmentDetails, error: fetchError } = await supabase
       .from("appointments")
       .select(`
         id,
@@ -112,7 +171,7 @@ serve(async (req: Request): Promise<Response> => {
       .eq("id", appointmentId)
       .single();
 
-    if (fetchError || !appointment) {
+    if (fetchError || !appointmentDetails) {
       console.error("Error fetching appointment:", fetchError);
       return new Response(
         JSON.stringify({ error: "Appointment not found" }),
@@ -120,9 +179,9 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const profile = appointment.profiles as any;
-    const slot = appointment.availability_slots as any;
-    const service = appointment.services as any;
+    const profile = appointmentDetails.profiles as any;
+    const slot = appointmentDetails.availability_slots as any;
+    const service = appointmentDetails.services as any;
 
     // Format the appointment date
     const appointmentDate = new Date(slot.date).toLocaleDateString("en-US", {
@@ -135,7 +194,7 @@ serve(async (req: Request): Promise<Response> => {
     const customerName = profile?.full_name || "Valued Customer";
     const customerEmail = profile?.email || "";
     const customerPhone = profile?.phone || "Not provided";
-    const serviceName = service?.name || appointment.service_type;
+    const serviceName = service?.name || appointmentDetails.service_type;
     const servicePrice = service?.price ? `$${service.price.toFixed(2)}` : "";
 
     // Send confirmation email to customer
@@ -188,10 +247,10 @@ serve(async (req: Request): Promise<Response> => {
                       <span style="background-color: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;">Pending Confirmation</span>
                     </td>
                   </tr>
-                  ${appointment.notes ? `
+                  ${appointmentDetails.notes ? `
                   <tr>
                     <td style="padding: 8px 0; color: #888; font-size: 14px; vertical-align: top;">Notes</td>
-                    <td style="padding: 8px 0; color: #2d2d2d; font-size: 14px;">${appointment.notes}</td>
+                    <td style="padding: 8px 0; color: #2d2d2d; font-size: 14px;">${appointmentDetails.notes}</td>
                   </tr>
                   ` : ''}
                 </table>
@@ -336,10 +395,10 @@ serve(async (req: Request): Promise<Response> => {
                         <td style="padding: 6px 0; color: #718096; font-size: 14px;">Time</td>
                         <td style="padding: 6px 0; color: #2d3748; font-size: 14px; font-weight: 500;">${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}</td>
                       </tr>
-                      ${appointment.notes ? `
+                      ${appointmentDetails.notes ? `
                       <tr>
                         <td style="padding: 6px 0; color: #718096; font-size: 14px; vertical-align: top;">Notes</td>
-                        <td style="padding: 6px 0; color: #2d3748; font-size: 14px;">${appointment.notes}</td>
+                        <td style="padding: 6px 0; color: #2d3748; font-size: 14px;">${appointmentDetails.notes}</td>
                       </tr>
                       ` : ''}
                     </table>
