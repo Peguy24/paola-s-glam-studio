@@ -326,12 +326,14 @@ const BookingCalendar = () => {
         if (paymentError) throw paymentError;
 
         if (paymentData?.url) {
-          // Open Stripe checkout in new tab
-          window.open(paymentData.url, "_blank");
+          // Redirect to Stripe checkout
           toast({
-            title: "Redirecting to payment",
-            description: "Complete your payment in the new tab. Your appointment is reserved.",
+            title: "Redirection vers le paiement",
+            description: "Vous allez être redirigé vers la page de paiement sécurisée.",
           });
+          // Use location.href instead of window.open to avoid popup blockers
+          window.location.href = paymentData.url;
+          return; // Stop here, user will be redirected
         }
       } catch (paymentError) {
         console.error("Failed to create payment session:", paymentError);
