@@ -156,17 +156,41 @@ serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         logStep("Checkout session expired", { sessionId: session.id });
         
-        // Optionally reset payment status if session expired without payment
         const appointmentId = session.metadata?.appointment_id;
         if (appointmentId) {
+          // Update payment status to cancelled
           const { error: updateError } = await supabaseClient
             .from("appointments")
-            .update({ payment_status: "pending" })
+            .update({ payment_status: "cancelled" })
             .eq("id", appointmentId)
-            .eq("payment_status", "pending"); // Only update if still pending
+            .eq("payment_status", "pending");
 
           if (updateError) {
             logStep("Failed to update expired session appointment", { error: updateError });
+          } else {
+            logStep("Appointment payment status updated to cancelled", { appointmentId });
+            
+            // Send cancellation notification emails
+            try {
+              const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+              const response = await fetch(`${supabaseUrl}/functions/v1/send-payment-cancelled`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({ appointmentId }),
+              });
+              
+              if (response.ok) {
+                logStep("Payment cancelled emails sent", { appointmentId });
+              } else {
+                const errorText = await response.text();
+                logStep("Failed to send payment cancelled emails", { error: errorText });
+              }
+            } catch (emailError) {
+              logStep("Error sending payment cancelled emails", { error: String(emailError) });
+            }
           }
         }
         break;
