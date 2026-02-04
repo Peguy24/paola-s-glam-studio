@@ -31,17 +31,17 @@ const PaymentCancelled = () => {
             </motion.div>
 
             <CardTitle className="text-2xl sm:text-3xl text-destructive">
-              Paiement annulé
+              Payment Cancelled
             </CardTitle>
             <CardDescription className="text-base sm:text-lg mt-2">
-              Votre paiement n'a pas été effectué
+              Your payment was not completed
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6">
             <div className="p-4 bg-muted/50 rounded-lg border border-border">
               <p className="text-sm sm:text-base text-muted-foreground">
-                Votre réservation est en attente. Vous pouvez réessayer le paiement ou nous contacter si vous avez des questions.
+                Your booking is pending. You can retry the payment or contact us if you have any questions.
               </p>
             </div>
 
@@ -49,13 +49,13 @@ const PaymentCancelled = () => {
               <Button asChild className="flex-1">
                 <Link to="/appointments">
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Réessayer
+                  Try Again
                 </Link>
               </Button>
               <Button asChild variant="outline" className="flex-1">
                 <Link to="/profile">
                   <Calendar className="mr-2 h-4 w-4" />
-                  Mes rendez-vous
+                  My Appointments
                 </Link>
               </Button>
             </div>
@@ -63,7 +63,7 @@ const PaymentCancelled = () => {
             <Button asChild variant="ghost" className="w-full">
               <Link to="/home">
                 <Home className="mr-2 h-4 w-4" />
-                Retour à l'accueil
+                Back to Home
               </Link>
             </Button>
           </CardContent>
