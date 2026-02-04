@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles } from "lucide-react";
+import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -53,8 +53,8 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 px-4">
       <Card className="w-full max-w-md border-2">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-primary to-secondary rounded-full">
-            <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
+          <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-primary/20">
+            <img src={logo} alt="Paola Beauty Glam" className="w-full h-full object-cover" />
           </div>
           <CardTitle className="text-2xl sm:text-3xl">Create Account</CardTitle>
           <CardDescription className="text-sm sm:text-base">Sign up to start booking appointments</CardDescription>
