@@ -323,18 +323,18 @@ const Home = () => {
               <div className="flex-1 text-center lg:text-left space-y-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-full text-xs sm:text-sm font-medium text-accent">
                   <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Bientôt Disponible
+                  Coming Soon
                 </div>
                 <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-                  Notre{" "}
+                  Our{" "}
                   <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                    Boutique
+                    Shop
                   </span>{" "}
-                  Arrive!
+                  Is Coming!
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-xl">
-                  Nous préparons une sélection exclusive de produits de beauté premium. 
-                  Restez connectés pour découvrir notre collection!
+                  We're preparing an exclusive selection of premium beauty products. 
+                  Stay tuned to discover our collection!
                 </p>
               </div>
               
@@ -342,7 +342,7 @@ const Home = () => {
                 <Link to="/contact">
                   <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)]">
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Nous Contacter
+                    Contact Us
                   </Button>
                 </Link>
               </div>
