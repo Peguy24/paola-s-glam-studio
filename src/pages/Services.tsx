@@ -16,8 +16,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2, Star } from "lucide-react";
+import { Scissors, Paintbrush, Sparkles, Heart, Pencil, Trash2, Star, Calendar } from "lucide-react";
 import { ServiceRatings } from "@/components/ServiceRatings";
+import { ServiceBookingDialog } from "@/components/ServiceBookingDialog";
 
 interface Service {
   id: string;
@@ -50,6 +51,8 @@ const Services = () => {
   });
   const [selectedServiceForReviews, setSelectedServiceForReviews] = useState<string | null>(null);
   const [reviewsDialogOpen, setReviewsDialogOpen] = useState(false);
+  const [bookingService, setBookingService] = useState<Service | null>(null);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -200,6 +203,11 @@ const Services = () => {
     setReviewsDialogOpen(true);
   };
 
+  const handleBookService = (service: Service) => {
+    setBookingService(service);
+    setBookingDialogOpen(true);
+  };
+
   const selectedService = services.find(s => s.id === selectedServiceForReviews);
 
   if (loading) {
@@ -275,6 +283,14 @@ const Services = () => {
                           </div>
                           <div className="flex items-center gap-2 justify-between sm:justify-end">
                             <span className="text-primary font-semibold text-sm sm:text-base">${service.price.toFixed(2)}</span>
+                            <Button
+                              size="sm"
+                              onClick={() => handleBookService(service)}
+                              className="gap-1"
+                            >
+                              <Calendar className="h-3 w-3" />
+                              Book Now
+                            </Button>
                             {isAdmin && (
                               <div className="flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
@@ -395,6 +411,15 @@ const Services = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Booking Dialog */}
+      {bookingService && (
+        <ServiceBookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          service={bookingService}
+        />
+      )}
 
       <Footer />
     </div>
