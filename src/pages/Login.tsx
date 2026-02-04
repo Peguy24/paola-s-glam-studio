@@ -180,7 +180,7 @@ const Login = () => {
                     htmlFor="remember-me" 
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Se souvenir de moi
+                    Remember me
                   </Label>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
