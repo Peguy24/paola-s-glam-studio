@@ -63,7 +63,7 @@ const BookingCalendar = () => {
   const [notes, setNotes] = useState("");
   const [phone, setPhone] = useState("");
   const [existingPhone, setExistingPhone] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_later">("pay_later");
+  const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_later">("pay_now");
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
