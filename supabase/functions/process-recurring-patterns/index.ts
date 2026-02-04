@@ -24,8 +24,62 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Validate request authorization
+    // This function can be called by Supabase scheduler or by admins
+    const authHeader = req.headers.get('Authorization');
+    const schedulerHeader = req.headers.get('X-Supabase-Scheduler');
+
+    // If called via scheduler, allow through
+    // If called manually, require admin authentication
+    if (!schedulerHeader) {
+      if (!authHeader?.startsWith('Bearer ')) {
+        console.error('No authorization header provided and not called by scheduler');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: No authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Verify user token and check admin role
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: userData, error: authError } = await authClient.auth.getUser(token);
+
+      if (authError || !userData?.user) {
+        console.error('Auth error:', authError);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check admin role using service client
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
+        _user_id: userData.user.id,
+        _role: 'admin'
+      });
+
+      if (roleError || !isAdmin) {
+        console.error('Admin role check failed:', roleError || 'User is not an admin');
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: Admin access required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Admin ${userData.user.email} authorized for process-recurring-patterns`);
+    } else {
+      console.log('Function called by Supabase scheduler');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('Starting recurring patterns processing...');
 
