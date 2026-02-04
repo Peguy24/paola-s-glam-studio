@@ -22,32 +22,12 @@ import glamour1 from "@/assets/hero/glamour-1.jpg";
 import glamour2 from "@/assets/hero/glamour-2.jpg";
 import glamour3 from "@/assets/hero/glamour-3.jpg";
 import glamour4 from "@/assets/hero/glamour-4.jpg";
-import glamour5 from "@/assets/hero/glamour-5.jpg";
-import glamour6 from "@/assets/hero/glamour-6.jpg";
-import glamour7 from "@/assets/hero/glamour-7.jpg";
-import glamour8 from "@/assets/hero/glamour-8.jpg";
-import glamour9 from "@/assets/hero/glamour-9.jpg";
-import glamour10 from "@/assets/hero/glamour-10.jpg";
-import glamour11 from "@/assets/hero/glamour-11.jpg";
-import glamour12 from "@/assets/hero/glamour-12.jpg";
-import glamour13 from "@/assets/hero/glamour-13.jpg";
-import glamour14 from "@/assets/hero/glamour-14.jpg";
 
 const heroImages = [
   { src: glamour1, alt: "Glamorous beauty transformation" },
   { src: glamour2, alt: "Professional beauty styling" },
   { src: glamour3, alt: "Stunning beauty looks" },
   { src: glamour4, alt: "Premium beauty experience" },
-  { src: glamour5, alt: "Pink bodysuit group styling" },
-  { src: glamour6, alt: "Elegant wavy hair look" },
-  { src: glamour7, alt: "Gold sequin duo glamour" },
-  { src: glamour8, alt: "Sleek group styling" },
-  { src: glamour9, alt: "Crossover bodysuit elegance" },
-  { src: glamour10, alt: "Trio bench pose glamour" },
-  { src: glamour11, alt: "Mixed bodysuit group" },
-  { src: glamour12, alt: "Hot pink long sleeve group" },
-  { src: glamour13, alt: "Straight hair styling group" },
-  { src: glamour14, alt: "Long sleeve pink glamour" },
 ];
 
 interface Transformation {
