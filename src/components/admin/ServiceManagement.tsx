@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImagePlus, X } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -37,6 +38,7 @@ interface Service {
   price: number;
   category: string;
   description: string | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +54,10 @@ export function ServiceManagement() {
     category: "",
     description: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,18 +85,70 @@ export function ServiceManagement() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadImage = async (serviceId: string): Promise<string | null> => {
+    if (!imageFile) return editingService?.image_url || null;
+
+    const fileExt = imageFile.name.split(".").pop();
+    const fileName = `${serviceId}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("service-images")
+      .upload(filePath, imageFile, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("service-images")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
 
     try {
-      const serviceData = {
-        name: formData.name,
-        price: parseFloat(formData.price),
-        category: formData.category,
-        description: formData.description || null,
-      };
+      let imageUrl = editingService?.image_url || null;
 
       if (editingService) {
+        // Upload image first if there's a new one
+        if (imageFile) {
+          imageUrl = await uploadImage(editingService.id);
+        } else if (imagePreview === null && editingService.image_url) {
+          // Image was removed
+          imageUrl = null;
+        }
+
+        const serviceData = {
+          name: formData.name,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          description: formData.description || null,
+          image_url: imageUrl,
+        };
+
         const { error } = await supabase
           .from("services")
           .update(serviceData)
@@ -99,9 +157,31 @@ export function ServiceManagement() {
         if (error) throw error;
         toast({ title: "Service updated successfully" });
       } else {
-        const { error } = await supabase.from("services").insert(serviceData);
+        // Create service first to get ID
+        const serviceData = {
+          name: formData.name,
+          price: parseFloat(formData.price),
+          category: formData.category,
+          description: formData.description || null,
+        };
+
+        const { data: newService, error } = await supabase
+          .from("services")
+          .insert(serviceData)
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Upload image if provided
+        if (imageFile && newService) {
+          imageUrl = await uploadImage(newService.id);
+          await supabase
+            .from("services")
+            .update({ image_url: imageUrl })
+            .eq("id", newService.id);
+        }
+
         toast({ title: "Service created successfully" });
       }
 
@@ -114,6 +194,8 @@ export function ServiceManagement() {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -143,6 +225,8 @@ export function ServiceManagement() {
       category: service.category,
       description: service.description || "",
     });
+    setImagePreview(service.image_url);
+    setImageFile(null);
     setDialogOpen(true);
   };
 
@@ -154,6 +238,11 @@ export function ServiceManagement() {
       category: "",
       description: "",
     });
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const groupedServices = services.reduce((acc, service) => {
@@ -247,17 +336,56 @@ export function ServiceManagement() {
                       }
                     />
                   </div>
+                  <div>
+                    <Label>Service Image (Optional)</Label>
+                    <div className="mt-2">
+                      {imagePreview ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-32 h-32 object-cover rounded-lg border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6"
+                            onClick={removeImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="w-32 h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground mt-1">Add Image</span>
+                        </div>
+                      )}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageChange}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter className="mt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setDialogOpen(false)}
+                    disabled={uploading}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    {editingService ? "Update" : "Create"}
+                  <Button type="submit" disabled={uploading}>
+                    {uploading ? "Saving..." : editingService ? "Update" : "Create"}
                   </Button>
                 </DialogFooter>
               </form>
