@@ -12,10 +12,10 @@ interface Rating {
   admin_response: string | null;
   admin_response_at: string | null;
   created_at: string;
-  client: {
+  client?: {
     full_name: string | null;
     email: string;
-  };
+  } | null;
 }
 
 interface ServiceRatingsProps {
@@ -26,30 +26,56 @@ interface ServiceRatingsProps {
 export function ServiceRatings({ serviceId, serviceName }: ServiceRatingsProps) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    fetchRatings();
+    checkAuthAndFetchRatings();
   }, [serviceId]);
 
-  const fetchRatings = async () => {
+  const checkAuthAndFetchRatings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("ratings")
-        .select(`
-          id,
-          rating,
-          review,
-          admin_response,
-          admin_response_at,
-          created_at,
-          client:profiles!ratings_client_id_fkey(full_name, email)
-        `)
-        .eq("service_id", serviceId)
-        .order("created_at", { ascending: false });
+      
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (session) {
+        // Authenticated users can query the full ratings table with client info
+        const { data, error } = await supabase
+          .from("ratings")
+          .select(`
+            id,
+            rating,
+            review,
+            admin_response,
+            admin_response_at,
+            created_at,
+            client:profiles!ratings_client_id_fkey(full_name, email)
+          `)
+          .eq("service_id", serviceId)
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setRatings(data as Rating[]);
+        if (error) throw error;
+        setRatings(data as Rating[]);
+      } else {
+        // Unauthenticated users query the public_ratings view (no client_id exposed)
+        const { data, error } = await supabase
+          .from("public_ratings")
+          .select(`
+            id,
+            rating,
+            review,
+            admin_response,
+            admin_response_at,
+            created_at
+          `)
+          .eq("service_id", serviceId)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setRatings(data as Rating[]);
+      }
     } catch (error) {
       console.error("Error fetching ratings:", error);
     } finally {
@@ -74,14 +100,17 @@ export function ServiceRatings({ serviceId, serviceName }: ServiceRatingsProps) 
     );
   };
 
-  const getInitials = (name: string | null, email: string) => {
+  const getInitials = (name: string | null, email?: string) => {
     if (name) {
       const parts = name.split(" ");
       return parts.length > 1
         ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
         : name.slice(0, 2).toUpperCase();
     }
-    return email.slice(0, 2).toUpperCase();
+    if (email) {
+      return email.slice(0, 2).toUpperCase();
+    }
+    return "C";
   };
 
   if (loading) {
@@ -125,13 +154,13 @@ export function ServiceRatings({ serviceId, serviceName }: ServiceRatingsProps) 
                 <div className="flex gap-3">
                   <Avatar>
                     <AvatarFallback>
-                      {getInitials(rating.client.full_name, rating.client.email)}
+                      {getInitials(rating.client?.full_name || null, rating.client?.email)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <p className="font-medium">
-                        {rating.client.full_name || "Anonymous"}
+                        {rating.client?.full_name || "Verified Customer"}
                       </p>
                       <span className="text-xs text-muted-foreground">
                         {new Date(rating.created_at).toLocaleDateString()}

@@ -17,10 +17,10 @@ interface Review {
   photos: string[] | null;
   created_at: string;
   admin_response: string | null;
-  client: {
+  client?: {
     full_name: string | null;
   } | null;
-  service: {
+  service?: {
     name: string;
     category: string;
   } | null;
@@ -32,6 +32,7 @@ const Reviews = () => {
   const [filter, setFilter] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -39,27 +40,79 @@ const Reviews = () => {
 
   const fetchReviews = async () => {
     try {
-      const { data, error } = await supabase
-        .from("ratings")
-        .select(`
-          id,
-          rating,
-          review,
-          photos,
-          created_at,
-          admin_response,
-          client:profiles!ratings_client_id_fkey(full_name),
-          service:services!ratings_service_id_fkey(name, category)
-        `)
-        .not("review", "is", null)
-        .order("rating", { ascending: false })
-        .order("created_at", { ascending: false });
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      let data: Review[] = [];
+      
+      if (session) {
+        // Authenticated users can query the full ratings table with client info
+        const { data: ratingsData, error } = await supabase
+          .from("ratings")
+          .select(`
+            id,
+            rating,
+            review,
+            photos,
+            created_at,
+            admin_response,
+            client:profiles!ratings_client_id_fkey(full_name),
+            service:services!ratings_service_id_fkey(name, category)
+          `)
+          .not("review", "is", null)
+          .order("rating", { ascending: false })
+          .order("created_at", { ascending: false });
 
-      if (error) throw error;
+        if (error) throw error;
+        data = ratingsData as Review[];
+      } else {
+        // Unauthenticated users query the public_ratings view (no client_id exposed)
+        // Join with services separately since view doesn't have foreign keys
+        const { data: publicRatingsData, error } = await supabase
+          .from("public_ratings")
+          .select(`
+            id,
+            rating,
+            review,
+            photos,
+            created_at,
+            admin_response,
+            service_id
+          `)
+          .not("review", "is", null)
+          .order("rating", { ascending: false })
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        
+        // Fetch services for the ratings
+        const serviceIds = [...new Set((publicRatingsData || []).map(r => r.service_id).filter(Boolean))];
+        let servicesMap: Record<string, { name: string; category: string }> = {};
+        
+        if (serviceIds.length > 0) {
+          const { data: servicesData } = await supabase
+            .from("services")
+            .select("id, name, category")
+            .in("id", serviceIds);
+          
+          servicesMap = (servicesData || []).reduce((acc, s) => {
+            acc[s.id] = { name: s.name, category: s.category };
+            return acc;
+          }, {} as Record<string, { name: string; category: string }>);
+        }
+        
+        // Map public ratings with service info
+        data = (publicRatingsData || []).map(r => ({
+          ...r,
+          client: null, // No client info for unauthenticated users
+          service: r.service_id ? servicesMap[r.service_id] || null : null
+        })) as Review[];
+      }
 
       // Convert public URLs to signed URLs for photos
       const reviewsWithSignedUrls = await Promise.all(
-        (data as Review[]).map(async (review) => {
+        data.map(async (review) => {
           if (review.photos && review.photos.length > 0) {
             const signedPhotos = await getSignedPhotoUrls(review.photos);
             return { ...review, photos: signedPhotos };
@@ -276,12 +329,12 @@ const Reviews = () => {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border-2 border-primary/20">
                           <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground text-sm font-semibold">
-                            {getInitials(review.client?.full_name)}
+                            {getInitials(review.client?.full_name || null)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium text-sm text-foreground">
-                            {review.client?.full_name || "Anonymous"}
+                            {review.client?.full_name || "Verified Customer"}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(review.created_at)}
