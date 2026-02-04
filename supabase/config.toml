@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.send-booking-confirmation]
 verify_jwt = false
+
+[functions.send-review-reminder]
+verify_jwt = false
+
+[functions.create-service-payment]
+verify_jwt = false

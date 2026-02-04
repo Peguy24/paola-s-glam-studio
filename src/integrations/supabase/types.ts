@@ -68,11 +68,14 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          payment_intent_id: string | null
+          payment_status: string
           reminder_sent: boolean
           service_id: string | null
           service_type: string
           slot_id: string
           status: string
+          stripe_session_id: string | null
           updated_at: string
         }
         Insert: {
@@ -80,11 +83,14 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_intent_id?: string | null
+          payment_status?: string
           reminder_sent?: boolean
           service_id?: string | null
           service_type: string
           slot_id: string
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -92,11 +98,14 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_intent_id?: string | null
+          payment_status?: string
           reminder_sent?: boolean
           service_id?: string | null
           service_type?: string
           slot_id?: string
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
         }
         Relationships: [
