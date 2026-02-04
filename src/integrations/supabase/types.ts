@@ -527,7 +527,70 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_ratings: {
+        Row: {
+          admin_responder_id: string | null
+          admin_response: string | null
+          admin_response_at: string | null
+          appointment_id: string | null
+          created_at: string | null
+          id: string | null
+          photos: string[] | null
+          rating: number | null
+          review: string | null
+          service_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_responder_id?: string | null
+          admin_response?: string | null
+          admin_response_at?: string | null
+          appointment_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          photos?: string[] | null
+          rating?: number | null
+          review?: string | null
+          service_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_responder_id?: string | null
+          admin_response?: string | null
+          admin_response_at?: string | null
+          appointment_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          photos?: string[] | null
+          rating?: number | null
+          review?: string | null
+          service_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_admin_responder_id_fkey"
+            columns: ["admin_responder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
