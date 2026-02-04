@@ -15,6 +15,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     if (!resendApiKey) {
@@ -23,6 +24,57 @@ serve(async (req: Request): Promise<Response> => {
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Validate request authorization
+    // This function is designed to be called by Supabase scheduler or by admins
+    const authHeader = req.headers.get('Authorization');
+    const schedulerHeader = req.headers.get('X-Supabase-Scheduler');
+    
+    // If called via scheduler, verify the scheduler header exists
+    // If called manually, require admin authentication
+    if (!schedulerHeader) {
+      if (!authHeader?.startsWith('Bearer ')) {
+        console.error('No authorization header provided and not called by scheduler');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: No authorization header' }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify admin role for manual calls
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: userData, error: authError } = await authClient.auth.getUser(token);
+      
+      if (authError || !userData?.user) {
+        console.error('Auth error:', authError);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
+        _user_id: userData.user.id,
+        _role: 'admin'
+      });
+
+      if (roleError || !isAdmin) {
+        console.error('Admin role check failed:', roleError || 'User is not an admin');
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: Admin access required' }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log(`Admin ${userData.user.email} authorized for send-appointment-reminders`);
+    } else {
+      console.log('Function called by Supabase scheduler');
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
