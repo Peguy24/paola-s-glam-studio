@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Calendar, Clock, FileText, XCircle, Star, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Calendar, Clock, FileText, XCircle, Star, Upload, X, Image as ImageIcon, CreditCard, Banknote } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ interface Appointment {
   service_type: string;
   service_id: string | null;
   status: string;
+  payment_status: string;
   notes: string | null;
   created_at: string;
   service: {
@@ -60,6 +61,18 @@ const statusColors = {
   confirmed: "bg-green-500/10 text-green-500 border-green-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
   completed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+};
+
+const paymentStatusColors = {
+  pending: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  pay_later: "bg-slate-500/10 text-slate-500 border-slate-500/20",
+};
+
+const paymentStatusLabels = {
+  pending: "Payment Pending",
+  paid: "Paid",
+  pay_later: "Pay at Salon",
 };
 
 interface AppointmentHistoryProps {
@@ -92,6 +105,7 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
         service_type,
         service_id,
         status,
+        payment_status,
         notes,
         created_at,
         service:service_id (
@@ -376,9 +390,19 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
                     </div>
                   </CardDescription>
                 </div>
-                <Badge className={statusColors[appointment.status as keyof typeof statusColors]}>
-                  {appointment.status}
-                </Badge>
+                <div className="flex flex-col gap-2">
+                  <Badge className={statusColors[appointment.status as keyof typeof statusColors]}>
+                    {appointment.status}
+                  </Badge>
+                  <Badge className={`${paymentStatusColors[appointment.payment_status as keyof typeof paymentStatusColors]} flex items-center gap-1`}>
+                    {appointment.payment_status === "paid" ? (
+                      <CreditCard className="h-3 w-3" />
+                    ) : (
+                      <Banknote className="h-3 w-3" />
+                    )}
+                    {paymentStatusLabels[appointment.payment_status as keyof typeof paymentStatusLabels] || appointment.payment_status}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
