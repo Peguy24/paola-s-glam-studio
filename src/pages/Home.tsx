@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Calendar, Star, Heart, Loader2 } from "lucide-react";
+import { Sparkles, Calendar, Star, Heart, Loader2, ShoppingBag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import Navigation from "@/components/Navigation";
@@ -301,6 +301,52 @@ const Home = () => {
                 Explore Our Services
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Shop Coming Soon Banner */}
+      <section className="py-12 sm:py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
+        <div className="container mx-auto">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 border border-border/50 p-8 sm:p-12">
+            {/* Decorative elements */}
+            <div className="absolute top-4 right-4 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+            <div className="absolute bottom-4 left-4 w-24 h-24 bg-secondary/10 rounded-full blur-2xl" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+                  <ShoppingBag className="h-10 w-10 sm:h-12 sm:w-12 text-primary-foreground" />
+                </div>
+              </div>
+              
+              <div className="flex-1 text-center lg:text-left space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 rounded-full text-xs sm:text-sm font-medium text-accent">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Bientôt Disponible
+                </div>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+                  Notre{" "}
+                  <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                    Boutique
+                  </span>{" "}
+                  Arrive!
+                </h3>
+                <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-xl">
+                  Nous préparons une sélection exclusive de produits de beauté premium. 
+                  Restez connectés pour découvrir notre collection!
+                </p>
+              </div>
+              
+              <div className="flex-shrink-0">
+                <Link to="/contact">
+                  <Button size="lg" className="bg-gradient-to-r from-primary to-secondary hover:shadow-[var(--shadow-glow)]">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Nous Contacter
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
