@@ -12,7 +12,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[SEND-PAYMENT-CONFIRMATION] ${step}${detailsStr}`);
 };
 
-const ADMIN_EMAIL = "paolabeautyglam@gmail.com";
 const FROM_EMAIL = "Paola Beauty Glam <notifications@paola-beautyglam.com>";
 
 serve(async (req) => {
@@ -239,26 +238,58 @@ serve(async (req) => {
       logStep("Client email sent successfully");
     }
 
-    // Send email to admin
-    logStep("Sending email to admin", { adminEmail: ADMIN_EMAIL });
-    const { error: adminEmailError } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [ADMIN_EMAIL],
-      subject: `💰 New Payment: $${servicePrice.toFixed(2)} - ${clientName}`,
-      html: adminEmailHtml,
-    });
+    // Fetch all admin users
+    const { data: adminRoles, error: adminRolesError } = await supabaseClient
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
 
-    if (adminEmailError) {
-      logStep("Failed to send admin email", { error: adminEmailError });
+    if (adminRolesError) {
+      logStep("Failed to fetch admin roles", { error: adminRolesError });
+    }
+
+    let adminEmailsSent = 0;
+    if (adminRoles && adminRoles.length > 0) {
+      const adminUserIds = adminRoles.map((r) => r.user_id);
+      
+      const { data: adminProfiles, error: profilesError } = await supabaseClient
+        .from("profiles")
+        .select("email, full_name")
+        .in("id", adminUserIds);
+
+      if (profilesError) {
+        logStep("Failed to fetch admin profiles", { error: profilesError });
+      }
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        for (const admin of adminProfiles) {
+          if (!admin.email) continue;
+
+          logStep("Sending email to admin", { adminEmail: admin.email });
+          const { error: adminEmailError } = await resend.emails.send({
+            from: FROM_EMAIL,
+            to: [admin.email],
+            subject: `💰 New Payment: $${servicePrice.toFixed(2)} - ${clientName}`,
+            html: adminEmailHtml,
+          });
+
+          if (adminEmailError) {
+            logStep("Failed to send admin email", { error: adminEmailError, email: admin.email });
+          } else {
+            logStep("Admin email sent successfully", { email: admin.email });
+            adminEmailsSent++;
+          }
+        }
+      }
     } else {
-      logStep("Admin email sent successfully");
+      logStep("No admin users found");
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         clientEmailSent: !clientEmailError,
-        adminEmailSent: !adminEmailError
+        adminEmailsSent
       }),
       {
         status: 200,

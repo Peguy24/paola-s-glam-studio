@@ -165,13 +165,17 @@ serve(async (req) => {
       logStep("Client email sent", { result: clientEmailResult });
     }
 
-    // Send notification to admin
-    const adminEmail = "paolabeautyglam@gmail.com";
-    const adminEmailResult = await resend.emails.send({
-      from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
-      to: [adminEmail],
-      subject: `⚠️ Payment Cancelled - ${serviceName} - ${clientName}`,
-      html: `
+    // Fetch all admin users
+    const { data: adminRoles, error: adminRolesError } = await supabaseClient
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+
+    if (adminRolesError) {
+      logStep("Failed to fetch admin roles", { error: adminRolesError });
+    }
+
+    const adminEmailHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -208,9 +212,42 @@ serve(async (req) => {
           </div>
         </body>
         </html>
-      `,
-    });
-    logStep("Admin email sent", { result: adminEmailResult });
+    `;
+
+    if (adminRoles && adminRoles.length > 0) {
+      const adminUserIds = adminRoles.map((r) => r.user_id);
+      
+      const { data: adminProfiles, error: profilesError } = await supabaseClient
+        .from("profiles")
+        .select("email, full_name")
+        .in("id", adminUserIds);
+
+      if (profilesError) {
+        logStep("Failed to fetch admin profiles", { error: profilesError });
+      }
+
+      if (adminProfiles && adminProfiles.length > 0) {
+        for (const admin of adminProfiles) {
+          if (!admin.email) continue;
+
+          logStep("Sending email to admin", { adminEmail: admin.email });
+          const adminEmailResult = await resend.emails.send({
+            from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
+            to: [admin.email],
+            subject: `⚠️ Payment Cancelled - ${serviceName} - ${clientName}`,
+            html: adminEmailHtml,
+          });
+
+          if (adminEmailResult.error) {
+            logStep("Failed to send admin email", { error: adminEmailResult.error, email: admin.email });
+          } else {
+            logStep("Admin email sent", { email: admin.email });
+          }
+        }
+      }
+    } else {
+      logStep("No admin users found");
+    }
 
     // Send SMS to client if phone number is available
     const clientPhone = appointment.profiles?.phone;
