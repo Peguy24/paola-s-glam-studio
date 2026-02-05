@@ -12,7 +12,7 @@ const logStep = (step: string, details?: any) => {
   console.log(`[SEND-PAYMENT-CONFIRMATION] ${step}${detailsStr}`);
 };
 
-const ADMIN_EMAIL = "paolasmakeupglam@gmail.com";
+const ADMIN_EMAIL = "paolabeautyglam@gmail.com";
 const FROM_EMAIL = "Paola Beauty Glam <notifications@paola-beautyglam.com>";
 
 serve(async (req) => {
