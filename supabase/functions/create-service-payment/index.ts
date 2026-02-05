@@ -18,9 +18,15 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  const supabaseAdmin = createClient(
+    supabaseUrl,
+    supabaseServiceRoleKey,
+    { auth: { persistSession: false } }
   );
 
   try {
@@ -45,6 +51,29 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Security: ensure the appointment belongs to this user
+    const { data: appt, error: apptError } = await supabaseAdmin
+      .from("appointments")
+      .select("id, client_id")
+      .eq("id", appointmentId)
+      .maybeSingle();
+
+    if (apptError || !appt) {
+      logStep("Appointment not found", { error: apptError });
+      return new Response(JSON.stringify({ error: "Appointment not found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
+      });
+    }
+
+    if (appt.client_id !== user.id) {
+      logStep("Forbidden: appointment does not belong to user", { appointmentId, userId: user.id });
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -96,20 +125,21 @@ serve(async (req) => {
     });
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
-    // Update appointment with stripe session ID
-    const { error: updateError } = await supabaseClient
+    // Update appointment with stripe session ID (service role to avoid RLS issues)
+    const { error: updateError } = await supabaseAdmin
       .from("appointments")
-      .update({ 
+      .update({
         stripe_session_id: session.id,
-        payment_status: "pending"
+        payment_status: "pending",
       })
       .eq("id", appointmentId);
 
     if (updateError) {
       logStep("Failed to update appointment with session ID", { error: updateError });
-    } else {
-      logStep("Appointment updated with session ID");
+      throw new Error(`Failed to persist Stripe session id: ${updateError.message}`);
     }
+
+    logStep("Appointment updated with session ID", { appointmentId, sessionId: session.id });
 
     return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
