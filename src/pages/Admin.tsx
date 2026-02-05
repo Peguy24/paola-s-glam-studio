@@ -82,16 +82,16 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="pt-32 pb-20 px-4">
+      <div className="pt-24 sm:pt-32 pb-20 px-4">
         <div className="container mx-auto">
           <div className="mb-8 sm:mb-12">
-            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+              <Shield className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-primary" />
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                 Admin Dashboard
               </h1>
             </div>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">
+            <p className="text-sm sm:text-base lg:text-xl text-muted-foreground">
               Manage appointments and availability
             </p>
           </div>

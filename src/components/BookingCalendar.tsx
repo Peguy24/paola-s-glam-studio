@@ -421,11 +421,13 @@ const BookingCalendar = () => {
         <Input
           id="phone"
           type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           placeholder="(267) 343-1794"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           maxLength={20}
-          className="text-sm sm:text-base"
+          className="text-base"
           required
         />
         <p className="text-xs text-muted-foreground">

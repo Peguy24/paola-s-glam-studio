@@ -147,11 +147,13 @@ const Contact = () => {
                       id="phone"
                       name="phone"
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       placeholder="+1 (555) 123-4567"
                       value={formData.phone}
                       onChange={handleChange}
                       maxLength={20}
-                      className="h-10 sm:h-11"
+                      className="h-10 sm:h-11 text-base"
                     />
                   </div>
 
