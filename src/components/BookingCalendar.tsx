@@ -427,7 +427,8 @@ const BookingCalendar = () => {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           maxLength={20}
-          className="text-base"
+          className="text-base touch-manipulation"
+          style={{ fontSize: '16px' }}
           required
         />
         <p className="text-xs text-muted-foreground">
