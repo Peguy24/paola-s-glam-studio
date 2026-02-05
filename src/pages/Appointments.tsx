@@ -108,12 +108,12 @@ const Appointments = () => {
 
       <div className="pb-20 px-4">
         <div className="container mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 sm:mb-12 pt-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-12 pt-6 sm:pt-8">
             <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 sm:mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-1 sm:mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                 Book an Appointment
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground">
+              <p className="text-sm sm:text-base lg:text-xl text-muted-foreground">
                 Schedule your beauty transformation
               </p>
             </div>

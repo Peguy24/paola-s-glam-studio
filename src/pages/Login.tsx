@@ -150,6 +150,7 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="text-base"
                   />
                 </div>
                 <div className="space-y-2">
@@ -171,7 +172,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="pr-10"
+                    className="pr-10 text-base"
                   />
                     <button
                       type="button"

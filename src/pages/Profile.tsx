@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
@@ -44,13 +45,13 @@ const Profile = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="pt-32 pb-20 px-4">
+      <div className="pt-24 sm:pt-32 pb-20 px-4">
         <div className="container mx-auto max-w-4xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <User className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <User className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-primary" />
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   My Profile
                 </h1>
               </div>
@@ -65,9 +66,9 @@ const Profile = () => {
           </div>
 
           <Tabs defaultValue="appointments" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="appointments" className="text-sm sm:text-base">My Appointments</TabsTrigger>
-              <TabsTrigger value="settings" className="text-sm sm:text-base">Settings</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-auto">
+              <TabsTrigger value="appointments" className="text-xs sm:text-sm lg:text-base py-2.5">My Appointments</TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm lg:text-base py-2.5">Settings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="appointments">
@@ -80,6 +81,8 @@ const Profile = () => {
           </Tabs>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
