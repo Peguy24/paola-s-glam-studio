@@ -166,7 +166,7 @@ serve(async (req) => {
     }
 
     // Send notification to admin
-    const adminEmail = "paolalopez@paola-beautyglam.com";
+    const adminEmail = "paolabeautyglam@gmail.com";
     const adminEmailResult = await resend.emails.send({
       from: "Paola Beauty Glam <notifications@paola-beautyglam.com>",
       to: [adminEmail],
