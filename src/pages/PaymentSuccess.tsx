@@ -12,6 +12,21 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const [verifying, setVerifying] = useState(true);
   const [verified, setVerified] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Restore session first before verifying payment
+    const restoreSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsAuthenticated(true);
+        // Refresh the session to ensure it's valid
+        await supabase.auth.refreshSession();
+      }
+    };
+    
+    restoreSession();
+  }, []);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -41,11 +56,16 @@ const PaymentSuccess = () => {
   useEffect(() => {
     // Auto redirect after 10 seconds
     const timer = setTimeout(() => {
-      navigate("/profile");
+      // Only redirect to profile if authenticated, otherwise go home
+      if (isAuthenticated) {
+        navigate("/profile");
+      } else {
+        navigate("/home");
+      }
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
   if (verifying) {
     return (
@@ -108,12 +128,21 @@ const PaymentSuccess = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button asChild className="flex-1">
-                <Link to="/profile">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  View My Appointments
-                </Link>
-              </Button>
+              {isAuthenticated ? (
+                <Button asChild className="flex-1">
+                  <Link to="/profile">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    View My Appointments
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild className="flex-1">
+                  <Link to="/appointments">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Book Another Appointment
+                  </Link>
+                </Button>
+              )}
               <Button asChild variant="outline" className="flex-1">
                 <Link to="/home">
                   <Home className="mr-2 h-4 w-4" />
@@ -123,7 +152,7 @@ const PaymentSuccess = () => {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              You will be redirected to your profile in 10 seconds...
+              You will be redirected {isAuthenticated ? "to your profile" : "to the home page"} in 10 seconds...
             </p>
           </CardContent>
         </Card>
