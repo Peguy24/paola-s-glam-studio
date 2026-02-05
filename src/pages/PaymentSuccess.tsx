@@ -1,13 +1,42 @@
-import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Calendar, Home, Sparkles } from "lucide-react";
+import { CheckCircle, Calendar, Home, Sparkles, Loader2 } from "lucide-react";
 import logo from "@/assets/paola-beauty-glam-logo.jpeg";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [verifying, setVerifying] = useState(true);
+  const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    const verifyPayment = async () => {
+      const appointmentId = searchParams.get("appointment_id");
+      
+      if (appointmentId) {
+        try {
+          // Call edge function to verify and update payment status
+          const { error } = await supabase.functions.invoke("verify-payment", {
+            body: { appointmentId },
+          });
+          
+          if (!error) {
+            setVerified(true);
+          }
+        } catch (err) {
+          console.error("Error verifying payment:", err);
+        }
+      }
+      
+      setVerifying(false);
+    };
+
+    verifyPayment();
+  }, [searchParams]);
 
   useEffect(() => {
     // Auto redirect after 10 seconds
@@ -17,6 +46,19 @@ const PaymentSuccess = () => {
 
     return () => clearTimeout(timer);
   }, [navigate]);
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 px-4">
+        <Card className="w-full max-w-md border-2 text-center">
+          <CardContent className="py-12">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Confirming your payment...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 px-4">
