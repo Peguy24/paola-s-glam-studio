@@ -124,6 +124,8 @@ const handler = async (req: Request): Promise<Response> => {
         service_type,
         status,
         client_id,
+         refund_status,
+         refund_amount,
         slot:availability_slots(date, start_time, end_time),
         profile:profiles!appointments_client_id_fkey(email, full_name, phone),
         service:services(name, price)
@@ -144,6 +146,8 @@ const handler = async (req: Request): Promise<Response> => {
     const clientName = appointment.profile?.full_name || "Valued Client";
     const slot = appointment.slot;
     const serviceName = appointment.service?.name || appointment.service_type;
+     const refundAmount = appointment.refund_amount;
+     const refundProcessed = appointment.refund_status === 'processed';
 
     if (!clientEmail) {
       console.error(`No email found for appointment ${appointment.id}`);
@@ -194,23 +198,33 @@ const handler = async (req: Request): Promise<Response> => {
       `;
       smsBody = `Paola Beauty Glam: Your appointment for ${serviceName} on ${slot.date} at ${slot.start_time.slice(0, 5)} is PENDING confirmation. We'll notify you soon!`;
     } else if (newStatus === "cancelled") {
+       const refundText = refundProcessed && refundAmount > 0
+         ? `<p style="color: #22c55e; font-weight: bold;">A refund of $${Number(refundAmount).toFixed(2)} has been processed and will be returned to your original payment method.</p>`
+         : refundAmount === 0 && appointment.refund_status !== null
+           ? `<p>Per our cancellation policy, no refund is applicable for this cancellation.</p>`
+           : '';
+       
+       const smsRefundText = refundProcessed && refundAmount > 0
+         ? ` Refund of $${Number(refundAmount).toFixed(2)} processed.`
+         : '';
+ 
       subject = "Appointment Cancelled - Paola Beauty Glam";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #8B5CF6;">Appointment Cancelled</h1>
           <p>Dear ${clientName},</p>
-          <p>We regret to inform you that your appointment has been cancelled.</p>
+           <p>Your appointment has been cancelled.</p>
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #ef4444;">
             <p style="margin: 5px 0;"><strong>Service:</strong> ${serviceName}</p>
             <p style="margin: 5px 0;"><strong>Date:</strong> ${slot.date}</p>
             <p style="margin: 5px 0;"><strong>Time:</strong> ${slot.start_time.slice(0, 5)} - ${slot.end_time.slice(0, 5)}</p>
           </div>
+           ${refundText}
           <p>Please contact us if you'd like to reschedule.</p>
-          <p>We apologize for any inconvenience.</p>
           <p>Best regards,<br><strong>Paola Beauty Glam Team</strong></p>
         </div>
       `;
-      smsBody = `Paola Beauty Glam: Your appointment for ${serviceName} on ${slot.date} at ${slot.start_time.slice(0, 5)} has been CANCELLED. Contact us to reschedule.`;
+       smsBody = `Paola Beauty Glam: Your appointment for ${serviceName} on ${slot.date} at ${slot.start_time.slice(0, 5)} has been CANCELLED.${smsRefundText} Contact us to reschedule.`;
     } else if (newStatus === "completed") {
       subject = "Appointment Completed - Thank You! - Paola Beauty Glam";
       htmlContent = `
