@@ -17,8 +17,9 @@ import { TransformationGallery } from "@/components/admin/TransformationGallery"
 import { ContactMessages } from "@/components/admin/ContactMessages";
 import { RatingsManagement } from "@/components/admin/RatingsManagement";
 import { SiteSettings } from "@/components/admin/SiteSettings";
+ import { CancellationPolicySettings } from "@/components/admin/CancellationPolicySettings";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings } from "lucide-react";
+ import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings, RefreshCcw } from "lucide-react";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -147,6 +148,10 @@ const Admin = () => {
                   <Settings className="h-4 w-4 mr-1.5 hidden xl:inline" />
                   Settings
                 </TabsTrigger>
+                 <TabsTrigger value="cancellation" className="text-xs xl:text-sm">
+                   <RefreshCcw className="h-4 w-4 mr-1.5 hidden xl:inline" />
+                   Cancellation
+                 </TabsTrigger>
               </TabsList>
             </div>
 
@@ -232,6 +237,12 @@ const Admin = () => {
                         <span>Site Settings</span>
                       </div>
                     </SelectItem>
+                     <SelectItem value="cancellation">
+                       <div className="flex items-center gap-2">
+                         <RefreshCcw className="h-4 w-4" />
+                         <span>Cancellation Policy</span>
+                       </div>
+                     </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -283,6 +294,10 @@ const Admin = () => {
             <TabsContent value="settings">
               <SiteSettings />
             </TabsContent>
+ 
+             <TabsContent value="cancellation">
+               <CancellationPolicySettings />
+             </TabsContent>
           </Tabs>
         </div>
       </div>

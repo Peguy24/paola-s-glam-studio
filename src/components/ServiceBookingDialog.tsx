@@ -20,6 +20,11 @@ import { Clock, Calendar as CalendarIcon, Phone, CreditCard, Wallet, Loader2 } f
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 
+ interface CancellationPolicy {
+   hours_before: number;
+   refund_percentage: number;
+ }
+ 
 interface TimeSlot {
   id: string;
   date: string;
@@ -66,6 +71,7 @@ export const ServiceBookingDialog = ({ open, onOpenChange, service }: ServiceBoo
   const [paymentMethod, setPaymentMethod] = useState<"pay_now" | "pay_later">("pay_now");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
+   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -73,6 +79,7 @@ export const ServiceBookingDialog = ({ open, onOpenChange, service }: ServiceBoo
     if (open) {
       checkUser();
       fetchUserPhone();
+       fetchCancellationPolicies();
     }
   }, [open]);
 
@@ -103,6 +110,18 @@ export const ServiceBookingDialog = ({ open, onOpenChange, service }: ServiceBoo
     }
   };
 
+   const fetchCancellationPolicies = async () => {
+     const { data } = await supabase
+       .from("cancellation_policies")
+       .select("hours_before, refund_percentage")
+       .eq("is_active", true)
+       .order("hours_before", { ascending: false });
+ 
+     if (data) {
+       setCancellationPolicies(data);
+     }
+   };
+ 
   const fetchAvailableSlots = async () => {
     if (!date) return;
 
@@ -396,6 +415,39 @@ export const ServiceBookingDialog = ({ open, onOpenChange, service }: ServiceBoo
             </RadioGroup>
           </div>
 
+         {/* Cancellation Policy Display */}
+         {cancellationPolicies.length > 0 && (
+           <div className="bg-muted/50 p-4 rounded-lg border">
+             <p className="text-sm font-medium mb-2">Cancellation Policy:</p>
+             <ul className="text-xs text-muted-foreground space-y-1">
+               {cancellationPolicies
+                 .sort((a, b) => b.hours_before - a.hours_before)
+                 .map((policy, index, arr) => {
+                   const nextPolicy = arr[index + 1];
+                   if (policy.hours_before === 0) {
+                     return (
+                       <li key={policy.hours_before}>
+                         • No refund for last-minute cancellations
+                       </li>
+                     );
+                   } else if (!nextPolicy || nextPolicy.hours_before === 0) {
+                     return (
+                       <li key={policy.hours_before}>
+                         • {policy.refund_percentage}% refund if cancelled {policy.hours_before}+ hours before
+                       </li>
+                     );
+                   } else {
+                     return (
+                       <li key={policy.hours_before}>
+                         • {policy.refund_percentage}% refund if cancelled {nextPolicy.hours_before}-{policy.hours_before} hours before
+                       </li>
+                     );
+                   }
+                 })}
+             </ul>
+           </div>
+         )}
+ 
           {/* Book Button */}
           <Button
             onClick={handleBooking}

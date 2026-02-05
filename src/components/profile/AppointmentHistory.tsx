@@ -30,6 +30,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getSignedPhotoUrls } from "@/lib/storage";
 
+ interface CancellationPolicy {
+   hours_before: number;
+   refund_percentage: number;
+ }
+ 
 interface Appointment {
   id: string;
   service_type: string;
@@ -90,14 +95,21 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>([]);
+   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+   const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+   const [refundInfo, setRefundInfo] = useState<{ percentage: number; amount: number; hours: number } | null>(null);
+   const [processingCancel, setProcessingCancel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchAppointments();
+     fetchCancellationPolicies();
   }, [userId]);
 
   const fetchAppointments = async () => {
+     setLoading(true);
     const { data, error } = await supabase
       .from("appointments")
       .select(`
@@ -155,27 +167,73 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
     setLoading(false);
   };
 
-  const cancelAppointment = async (appointmentId: string) => {
-    const { error } = await supabase
-      .from("appointments")
-      .update({ status: "cancelled" })
-      .eq("id", appointmentId);
+   const fetchCancellationPolicies = async () => {
+     const { data } = await supabase
+       .from("cancellation_policies")
+       .select("hours_before, refund_percentage")
+       .eq("is_active", true)
+       .order("hours_before", { ascending: false });
+ 
+     if (data) {
+       setCancellationPolicies(data);
+     }
+   };
+ 
+   const calculateRefundInfo = (appointment: Appointment) => {
+     const appointmentDateTime = new Date(`${appointment.slot.date}T${appointment.slot.start_time}`);
+     const now = new Date();
+     const hoursUntil = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+ 
+     // Find applicable policy
+     const applicablePolicy = cancellationPolicies.find(p => p.hours_before <= hoursUntil);
+     const refundPercentage = applicablePolicy?.refund_percentage || 0;
+     const servicePrice = appointment.service?.price || 0;
+     const refundAmount = (servicePrice * refundPercentage) / 100;
+ 
+     return {
+       percentage: refundPercentage,
+       amount: refundAmount,
+       hours: Math.max(0, hoursUntil),
+     };
+   };
+ 
+   const openCancelDialog = (appointment: Appointment) => {
+     setAppointmentToCancel(appointment);
+     const info = calculateRefundInfo(appointment);
+     setRefundInfo(info);
+     setCancelDialogOpen(true);
+   };
+ 
+   const cancelAppointment = async () => {
+     if (!appointmentToCancel) return;
+ 
+     setProcessingCancel(true);
+ 
+     try {
+       const { data, error } = await supabase.functions.invoke("process-refund", {
+         body: { appointmentId: appointmentToCancel.id },
+       });
+ 
+       if (error) throw error;
 
-    if (error) {
+       toast({
+         title: "Appointment Cancelled",
+         description: data.message || "Your appointment has been cancelled successfully.",
+       });
+ 
+       setCancelDialogOpen(false);
+       setAppointmentToCancel(null);
+       setRefundInfo(null);
+       fetchAppointments();
+     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to cancel appointment",
+         description: error.message || "Failed to cancel appointment",
         variant: "destructive",
       });
-      return;
+     } finally {
+       setProcessingCancel(false);
     }
-
-    toast({
-      title: "Success",
-      description: "Appointment cancelled successfully",
-    });
-
-    fetchAppointments();
   };
 
   const openRatingDialog = async (appointment: Appointment) => {
@@ -453,28 +511,14 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
 
               <div className="flex gap-2 flex-wrap">
                 {canCancel && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Cancel Appointment
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to cancel this appointment? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep Appointment</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => cancelAppointment(appointment.id)}>
-                          Yes, Cancel
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                   <Button
+                     variant="destructive"
+                     size="sm"
+                     onClick={() => openCancelDialog(appointment)}
+                   >
+                     <XCircle className="mr-2 h-4 w-4" />
+                     Cancel Appointment
+                   </Button>
                 )}
 
                 {canRate && (
@@ -608,6 +652,74 @@ const AppointmentHistory = ({ userId }: AppointmentHistoryProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+       
+       {/* Cancellation Dialog with Refund Info */}
+       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+         <AlertDialogContent>
+           <AlertDialogHeader>
+             <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+             <AlertDialogDescription asChild>
+               <div className="space-y-4">
+                 {appointmentToCancel && (
+                   <div className="bg-muted p-4 rounded-lg space-y-2">
+                     <p className="font-medium text-foreground">
+                       {appointmentToCancel.service?.name || appointmentToCancel.service_type}
+                     </p>
+                     <p className="text-sm">
+                       {format(new Date(appointmentToCancel.slot.date), "EEEE, MMMM d, yyyy")} at{" "}
+                       {appointmentToCancel.slot.start_time.slice(0, 5)}
+                     </p>
+                   </div>
+                 )}
+                 
+                 {refundInfo && appointmentToCancel?.payment_status === "paid" && (
+                   <div className={`p-4 rounded-lg border-2 ${
+                     refundInfo.percentage === 100 
+                       ? "bg-green-500/10 border-green-500/30" 
+                       : refundInfo.percentage > 0 
+                         ? "bg-yellow-500/10 border-yellow-500/30"
+                         : "bg-red-500/10 border-red-500/30"
+                   }`}>
+                     <p className="font-medium text-foreground mb-1">Cancellation Policy</p>
+                     <p className="text-sm">
+                       Your appointment is in{" "}
+                       <span className="font-semibold">{Math.floor(refundInfo.hours)} hours</span>.
+                     </p>
+                     {refundInfo.percentage > 0 ? (
+                       <p className="text-sm mt-2">
+                         You will receive a{" "}
+                         <span className="font-semibold text-primary">
+                           {refundInfo.percentage}% refund (${refundInfo.amount.toFixed(2)})
+                         </span>
+                       </p>
+                     ) : (
+                       <p className="text-sm mt-2 text-destructive font-medium">
+                         No refund available for cancellations less than 24 hours before the appointment.
+                       </p>
+                     )}
+                   </div>
+                 )}
+ 
+                 {appointmentToCancel?.payment_status !== "paid" && (
+                   <p className="text-sm text-muted-foreground">
+                     Are you sure you want to cancel this appointment?
+                   </p>
+                 )}
+               </div>
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+           <AlertDialogFooter>
+             <AlertDialogCancel disabled={processingCancel}>Keep Appointment</AlertDialogCancel>
+             <AlertDialogAction 
+               onClick={cancelAppointment}
+               disabled={processingCancel}
+               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+             >
+               {processingCancel ? "Processing..." : "Confirm Cancellation"}
+             </AlertDialogAction>
+           </AlertDialogFooter>
+         </AlertDialogContent>
+       </AlertDialog>
     </div>
   );
 };

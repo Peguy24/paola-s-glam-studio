@@ -70,6 +70,9 @@ export type Database = {
           notes: string | null
           payment_intent_id: string | null
           payment_status: string
+          refund_amount: number | null
+          refund_status: string | null
+          refunded_at: string | null
           reminder_sent: boolean
           service_id: string | null
           service_type: string
@@ -85,6 +88,9 @@ export type Database = {
           notes?: string | null
           payment_intent_id?: string | null
           payment_status?: string
+          refund_amount?: number | null
+          refund_status?: string | null
+          refunded_at?: string | null
           reminder_sent?: boolean
           service_id?: string | null
           service_type: string
@@ -100,6 +106,9 @@ export type Database = {
           notes?: string | null
           payment_intent_id?: string | null
           payment_status?: string
+          refund_amount?: number | null
+          refund_status?: string | null
+          refunded_at?: string | null
           reminder_sent?: boolean
           service_id?: string | null
           service_type?: string
@@ -175,6 +184,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cancellation_policies: {
+        Row: {
+          created_at: string
+          display_order: number
+          hours_before: number
+          id: string
+          is_active: boolean
+          refund_percentage: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          hours_before: number
+          id?: string
+          is_active?: boolean
+          refund_percentage: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          hours_before?: number
+          id?: string
+          is_active?: boolean
+          refund_percentage?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       contact_messages: {
         Row: {
