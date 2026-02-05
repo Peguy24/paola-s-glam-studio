@@ -20,6 +20,7 @@ import { SiteSettings } from "@/components/admin/SiteSettings";
  import { CancellationPolicySettings } from "@/components/admin/CancellationPolicySettings";
 import { useToast } from "@/hooks/use-toast";
  import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings, RefreshCcw } from "lucide-react";
+ import { AdminGuideGenerator } from "@/components/admin/AdminGuideGenerator";
 
 const Admin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -94,6 +95,9 @@ const Admin = () => {
             <p className="text-sm sm:text-base lg:text-xl text-muted-foreground">
               Manage appointments and availability
             </p>
+             <div className="mt-4">
+               <AdminGuideGenerator />
+             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
