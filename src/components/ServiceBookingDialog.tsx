@@ -362,10 +362,13 @@ export const ServiceBookingDialog = ({ open, onOpenChange, service }: ServiceBoo
             <Input
               id="phone"
               type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="+1 (555) 123-4567"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
+              className="text-base"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Required for booking confirmations
