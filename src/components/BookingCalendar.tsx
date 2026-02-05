@@ -484,20 +484,20 @@ const BookingCalendar = () => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-x-hidden">
       {/* Calendar Card - Always visible */}
       <Card className="border-2">
         <CardHeader className="pb-3 sm:pb-6">
           <CardTitle className="text-xl sm:text-2xl">Select Date</CardTitle>
           <CardDescription className="text-sm sm:text-base">Choose your preferred date</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center px-2 sm:px-6">
-          <div className="w-full max-w-[340px] sm:max-w-md">
+        <CardContent className="flex justify-center px-1 sm:px-6">
+          <div className="w-full max-w-[300px] sm:max-w-md">
             <Calendar
               mode="single"
               selected={date}
               onSelect={setDate}
-              className="rounded-md border w-full"
+              className="rounded-md border w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full"
               disabled={(date) => date < new Date()}
             />
           </div>
@@ -520,7 +520,7 @@ const BookingCalendar = () => {
                 Complete your appointment for {date && format(date, "MMMM d, yyyy")}
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 overflow-y-auto space-y-4 pb-4">
+            <div className="px-4 overflow-y-auto overflow-x-hidden space-y-4 pb-4">
               <BookingDetailsContent />
             </div>
             <DrawerFooter className="pt-2">
