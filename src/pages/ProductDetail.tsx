@@ -1,92 +1,74 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ShoppingCart, Loader2 } from "lucide-react";
-import { fetchProductByHandle } from "@/lib/shopify";
+import { supabase } from "@/integrations/supabase/client";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 
 const ProductDetail = () => {
   const { handle } = useParams<{ handle: string }>();
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const addItem = useCartStore(state => state.addItem);
 
-  useEffect(() => {
-    const loadProduct = async () => {
-      if (!handle) return;
-      
-      setLoading(true);
-      try {
-        const data = await fetchProductByHandle(handle);
-        setProduct(data);
-        
-        if (data?.variants?.edges?.[0]) {
-          const firstVariant = data.variants.edges[0].node;
-          setSelectedVariant(firstVariant);
-          
-          const initialOptions: Record<string, string> = {};
-          firstVariant.selectedOptions.forEach((opt: any) => {
-            initialOptions[opt.name] = opt.value;
-          });
-          setSelectedOptions(initialOptions);
-        }
-      } catch (error) {
-        console.error('Error loading product:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: product, isLoading } = useQuery({
+    queryKey: ["product", handle],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", handle)
+        .eq("is_active", true)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
 
-    loadProduct();
-  }, [handle]);
-
-  const handleOptionChange = (optionName: string, value: string) => {
-    const newOptions = { ...selectedOptions, [optionName]: value };
-    setSelectedOptions(newOptions);
-
-    const variant = product.variants.edges.find((v: any) => 
-      v.node.selectedOptions.every((opt: any) => 
-        newOptions[opt.name] === opt.value
-      )
-    );
-
-    if (variant) {
-      setSelectedVariant(variant.node);
-    }
-  };
+  const { data: variants } = useQuery({
+    queryKey: ["product-variants", handle],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("*")
+        .eq("product_id", handle!)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!handle,
+  });
 
   const handleAddToCart = () => {
-    if (!selectedVariant || !product) return;
+    if (!product) return;
 
-    const cartItem = {
-      product: { node: product },
-      variantId: selectedVariant.id,
-      variantTitle: selectedVariant.title,
-      price: selectedVariant.price,
+    const price = selectedVariant ? Number(selectedVariant.price || product.price) : Number(product.price);
+    const stock = selectedVariant ? selectedVariant.stock_quantity : product.stock_quantity;
+
+    if (stock <= 0) return;
+
+    addItem({
+      productId: product.id,
+      variantId: selectedVariant?.id,
+      name: product.name,
+      variantName: selectedVariant?.name,
+      price,
       quantity: 1,
-      selectedOptions: selectedVariant.selectedOptions
-    };
-
-    addItem(cartItem);
-    toast.success("Added to cart", {
-      description: `${product.title} has been added to your cart.`,
+      imageUrl: product.image_url,
     });
+    toast.success("Added to cart", { description: `${product.name} has been added to your cart.` });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <div className="pt-32 pb-20 px-4">
-          <div className="container mx-auto flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+        <div className="pt-32 pb-20 px-4 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
     );
@@ -96,62 +78,45 @@ const ProductDetail = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <div className="pt-32 pb-20 px-4">
-          <div className="container mx-auto text-center">
-            <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-            <Link to="/products">
-              <Button>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
-              </Button>
-            </Link>
-          </div>
+        <div className="pt-32 pb-20 px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+          <Link to="/products"><Button><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Button></Link>
         </div>
       </div>
     );
   }
 
-  const mainImage = product.images?.edges?.[0]?.node;
-  const price = selectedVariant?.price || product.priceRange.minVariantPrice;
+  const currentPrice = selectedVariant ? Number(selectedVariant.price || product.price) : Number(product.price);
+  const currentStock = selectedVariant ? selectedVariant.stock_quantity : product.stock_quantity;
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       <div className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4">
         <div className="container mx-auto">
           <Link to="/products">
-            <Button variant="ghost" className="mb-6">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Products
-            </Button>
+            <Button variant="ghost" className="mb-6"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Button>
           </Link>
 
           <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-            <div>
-              <Card>
-                <CardContent className="p-0">
-                  {mainImage ? (
-                    <img
-                      src={mainImage.url}
-                      alt={mainImage.altText || product.title}
-                      className="w-full h-auto rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full aspect-square bg-secondary/20 flex items-center justify-center rounded-lg">
-                      <ShoppingCart className="h-16 w-16 sm:h-20 sm:w-20 text-muted-foreground" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardContent className="p-0">
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-auto rounded-lg" />
+                ) : (
+                  <div className="w-full aspect-square bg-secondary/20 flex items-center justify-center rounded-lg">
+                    <ShoppingCart className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <div className="space-y-4 sm:space-y-6">
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{product.title}</h1>
-                <p className="text-xl sm:text-2xl font-bold text-primary">
-                  {price.currencyCode} {parseFloat(price.amount).toFixed(2)}
-                </p>
+                <Badge variant="secondary" className="mb-2 capitalize">{product.category}</Badge>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{product.name}</h1>
+                <p className="text-xl sm:text-2xl font-bold text-primary">${currentPrice.toFixed(2)}</p>
               </div>
 
               {product.description && (
@@ -161,32 +126,36 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {product.options?.map((option: any) => (
-                <div key={option.name}>
-                  <h3 className="text-sm font-semibold mb-2">{option.name}</h3>
+              {variants && variants.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Options</h3>
                   <div className="flex flex-wrap gap-2">
-                    {option.values.map((value: string) => (
+                    {variants.map((v: any) => (
                       <Badge
-                        key={value}
-                        variant={selectedOptions[option.name] === value ? "default" : "outline"}
+                        key={v.id}
+                        variant={selectedVariant?.id === v.id ? "default" : "outline"}
                         className="cursor-pointer"
-                        onClick={() => handleOptionChange(option.name, value)}
+                        onClick={() => setSelectedVariant(selectedVariant?.id === v.id ? null : v)}
                       >
-                        {value}
+                        {v.name}
+                        {v.stock_quantity <= 0 && " (Out of Stock)"}
                       </Badge>
                     ))}
                   </div>
                 </div>
-              ))}
+              )}
 
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleAddToCart}
-                disabled={!selectedVariant?.availableForSale}
-              >
+              <div className="text-sm text-muted-foreground">
+                {currentStock > 0 ? (
+                  currentStock <= 5 ? <span className="text-destructive">Only {currentStock} left in stock!</span> : <span>{currentStock} in stock</span>
+                ) : (
+                  <span className="text-destructive">Out of stock</span>
+                )}
+              </div>
+
+              <Button size="lg" className="w-full" onClick={handleAddToCart} disabled={currentStock <= 0}>
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {selectedVariant?.availableForSale ? "Add to Cart" : "Out of Stock"}
+                {currentStock > 0 ? "Add to Cart" : "Out of Stock"}
               </Button>
             </div>
           </div>

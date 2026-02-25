@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.create-product-payment]
+verify_jwt = false
+
+[functions.product-stripe-webhook]
+verify_jwt = false
