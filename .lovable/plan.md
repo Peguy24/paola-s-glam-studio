@@ -1,104 +1,115 @@
 
-# Guide d'Administration PDF - Paola Beauty Glam
+
+# Systeme de Vente de Produits avec Backend Custom (Sans Shopify)
 
 ## Objectif
-Créer une page dédiée dans l'application qui génère un PDF téléchargeable contenant les instructions complètes pour utiliser le tableau de bord administrateur.
+Remplacer l'integration Shopify par un systeme complet de gestion de produits, commandes et inventaire utilisant la base de donnees existante et Stripe pour les paiements. Cout mensuel : **0$** (seulement les frais Stripe de 2.9% + 0.30$ par transaction).
 
-## Fonctionnalités du guide
+## Architecture
 
-Le PDF contiendra des instructions détaillées pour les 13 sections du dashboard admin :
+```text
++-------------------+     +------------------+     +---------+
+|  Admin Dashboard  |---->|  Base de donnees |---->| Stripe  |
+|  (Gestion)        |     |  (Produits,      |     | Checkout|
++-------------------+     |   Commandes,     |     +---------+
+                          |   Inventaire)    |
++-------------------+     +------------------+
+|  Page Produits    |---->|                  |
+|  (Client)         |     |                  |
++-------------------+     +------------------+
+```
 
-### 1. Rendez-vous (Appointments)
-- Voir tous les rendez-vous avec filtres par statut
-- Changer le statut (En attente, Confirmé, Terminé, Annulé)
-- Reprogrammer un rendez-vous vers un autre créneau
-- Exporter en CSV ou PDF
+## Nouvelles Tables de Base de Donnees
 
-### 2. Disponibilités (Availability)
-- Créer des créneaux horaires manuellement
-- Créer des créneaux en masse (bulk)
-- Modifier ou supprimer des créneaux
-- Dupliquer un créneau pour une autre date
+### 1. `products` - Catalogue de produits
+- id, name, description, price, category, image_url
+- stock_quantity (inventaire)
+- is_active (publier/depublier)
+- created_at, updated_at
 
-### 3. Patterns Récurrents (Recurring)
-- Créer des modèles automatiques de créneaux
-- Sélectionner les jours de la semaine
-- Définir les heures et la capacité
-- Activer/Désactiver les patterns
+### 2. `product_variants` - Variantes (taille, couleur, etc.)
+- id, product_id, name, price, stock_quantity, is_active
 
-### 4. Services
-- Ajouter un nouveau service (nom, prix, catégorie, description, image)
-- Modifier un service existant
-- Supprimer un service
+### 3. `orders` - Commandes clients
+- id, client_id, status (pending, paid, shipped, delivered, cancelled)
+- total_amount, stripe_session_id, payment_status
+- shipping_address, tracking_number
+- created_at, updated_at
 
-### 5. Galerie de Transformations
-- Uploader des photos avant/après
-- Upload en masse
-- Recadrer les images
-- Organiser par catégorie
+### 4. `order_items` - Articles dans chaque commande
+- id, order_id, product_id, variant_id, quantity, unit_price
 
-### 6. Messages
-- Voir les messages de contact des clients
-- Marquer comme lu/non lu
-- Supprimer des messages
+## Securite (RLS)
+- Produits : visibles par tous, modifiables par admins seulement
+- Commandes : clients voient leurs propres commandes, admins voient tout
+- Variantes : meme politique que produits
 
-### 7. Notes et Avis (Ratings)
-- Voir tous les avis clients
-- Répondre aux avis
-- Supprimer les avis inappropriés
+## Modifications Cote Admin
 
-### 8. Analytics
-- Voir les statistiques de réservations
-- Graphiques de revenus
-- Comparaison entre périodes
-- Export des rapports
+### Nouveau tab "Produits" dans le dashboard admin
+- Ajouter/modifier/supprimer des produits avec image upload
+- Gerer l'inventaire (stock quantity)
+- Activer/desactiver des produits
+- Gerer les variantes (tailles, couleurs)
 
-### 9. Gestion Utilisateurs
-- Voir la liste des utilisateurs
-- Ajouter/Retirer le rôle admin
-- Exporter la liste en CSV
+### Nouveau tab "Commandes" dans le dashboard admin
+- Liste de toutes les commandes avec filtres par statut
+- Changer le statut (En attente -> Expedie -> Livre)
+- Ajouter un numero de suivi
+- Voir les details de chaque commande
 
-### 10. Journal d'Activité
-- Suivre les actions effectuées dans le système
+## Modifications Cote Client
 
-### 11. Historique Notifications
-- Voir les emails/SMS envoyés
+### Page Produits refaite
+- Affiche les produits depuis la base de donnees (remplace Shopify)
+- Filtres par categorie
+- Grille de produits avec images, prix, disponibilite
 
-### 12. Paramètres du Site
-- Modifier les coordonnées (téléphone, email)
-- Modifier l'adresse
-- Liens réseaux sociaux (Instagram, Facebook)
-- Heures d'ouverture
+### Page Detail Produit refaite
+- Selection de variantes
+- Ajout au panier
+- Indicateur de stock
 
-### 13. Politique d'Annulation
-- Créer des niveaux de remboursement
-- Définir les heures avant RDV et % de remboursement
-- Activer/Désactiver des règles
+### Panier et Checkout refaits
+- Panier utilise les donnees locales (Zustand reste)
+- Checkout via Stripe Checkout Session (edge function)
+- Pages de confirmation de paiement existantes reutilisees
 
----
+## Nouvelle Edge Function
 
-## Implémentation technique
+### `create-product-payment`
+- Recoit les articles du panier
+- Cree une Stripe Checkout Session
+- Enregistre la commande dans la base de donnees
+- Retourne l'URL de checkout Stripe
 
-### Fichier à créer
-`src/components/admin/AdminGuideGenerator.tsx`
+### `product-stripe-webhook`
+- Ecoute les evenements Stripe (payment_succeeded)
+- Met a jour le statut de la commande
+- Decremente l'inventaire automatiquement
 
-### Approche
-1. Créer un bouton dans le dashboard admin pour télécharger le guide
-2. Utiliser jsPDF (déjà installé) pour générer le PDF
-3. Structurer le PDF avec:
-   - Page de couverture avec logo et titre
-   - Table des matières
-   - Sections détaillées avec instructions pas à pas
-   - Captures d'écran simulées (descriptions textuelles)
+## Fichiers a Creer/Modifier
 
-### Contenu du PDF
-- Format A4
-- Police professionnelle
-- Numérotation des pages
-- En-têtes de section
-- Listes à puces pour les étapes
-- Conseils et astuces encadrés
+### Nouveaux fichiers
+- `src/components/admin/ProductManagement.tsx` - CRUD produits admin
+- `src/components/admin/OrderManagement.tsx` - Gestion commandes admin
+- `supabase/functions/create-product-payment/index.ts` - Checkout Stripe
+- `supabase/functions/product-stripe-webhook/index.ts` - Webhook
 
-### Modifications dans Admin.tsx
-- Ajouter un bouton "Télécharger le Guide" en haut du dashboard
-- Intégrer le composant de génération PDF
+### Fichiers a modifier
+- `src/pages/Products.tsx` - Remplacer "Coming Soon" par le vrai catalogue
+- `src/pages/ProductDetail.tsx` - Utiliser la base de donnees au lieu de Shopify
+- `src/stores/cartStore.ts` - Adapter pour les produits locaux
+- `src/components/CartDrawer.tsx` - Checkout via Stripe direct
+- `src/pages/Admin.tsx` - Ajouter tabs "Produits" et "Commandes"
+- `src/lib/shopify.ts` - Supprime (plus necessaire)
+
+### Bucket de stockage
+- Creer un bucket `product-images` pour les images des produits
+
+## Resultat
+- **0$/mois** de frais de plateforme (pas de Shopify)
+- Gestion complete des produits, commandes et inventaire dans le dashboard admin
+- Paiements securises via Stripe
+- Suivi des commandes pour l'admin et les clients
+
