@@ -1,39 +1,46 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { CartItem, createStorefrontCheckout } from '@/lib/shopify';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface CartItem {
+  productId: string;
+  variantId?: string;
+  name: string;
+  variantName?: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+}
 
 interface CartStore {
   items: CartItem[];
-  cartId: string | null;
-  checkoutUrl: string | null;
   isLoading: boolean;
-  
+
   addItem: (item: CartItem) => void;
-  updateQuantity: (variantId: string, quantity: number) => void;
-  removeItem: (variantId: string) => void;
+  updateQuantity: (productId: string, variantId: string | undefined, quantity: number) => void;
+  removeItem: (productId: string, variantId?: string) => void;
   clearCart: () => void;
-  setCartId: (cartId: string) => void;
-  setCheckoutUrl: (url: string) => void;
   setLoading: (loading: boolean) => void;
   createCheckout: () => Promise<void>;
 }
+
+const getItemKey = (productId: string, variantId?: string) => `${productId}-${variantId || 'default'}`;
 
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      cartId: null,
-      checkoutUrl: null,
       isLoading: false,
 
       addItem: (item) => {
         const { items } = get();
-        const existingItem = items.find(i => i.variantId === item.variantId);
-        
+        const key = getItemKey(item.productId, item.variantId);
+        const existingItem = items.find(i => getItemKey(i.productId, i.variantId) === key);
+
         if (existingItem) {
           set({
             items: items.map(i =>
-              i.variantId === item.variantId
+              getItemKey(i.productId, i.variantId) === key
                 ? { ...i, quantity: i.quantity + item.quantity }
                 : i
             )
@@ -43,41 +50,52 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      updateQuantity: (variantId, quantity) => {
+      updateQuantity: (productId, variantId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(variantId);
+          get().removeItem(productId, variantId);
           return;
         }
-        
+        const key = getItemKey(productId, variantId);
         set({
           items: get().items.map(item =>
-            item.variantId === variantId ? { ...item, quantity } : item
+            getItemKey(item.productId, item.variantId) === key ? { ...item, quantity } : item
           )
         });
       },
 
-      removeItem: (variantId) => {
+      removeItem: (productId, variantId) => {
+        const key = getItemKey(productId, variantId);
         set({
-          items: get().items.filter(item => item.variantId !== variantId)
+          items: get().items.filter(item => getItemKey(item.productId, item.variantId) !== key)
         });
       },
 
       clearCart: () => {
-        set({ items: [], cartId: null, checkoutUrl: null });
+        set({ items: [] });
       },
 
-      setCartId: (cartId) => set({ cartId }),
-      setCheckoutUrl: (checkoutUrl) => set({ checkoutUrl }),
       setLoading: (isLoading) => set({ isLoading }),
 
       createCheckout: async () => {
-        const { items, setLoading, setCheckoutUrl } = get();
+        const { items, setLoading, clearCart } = get();
         if (items.length === 0) return;
 
         setLoading(true);
         try {
-          const checkoutUrl = await createStorefrontCheckout(items);
-          setCheckoutUrl(checkoutUrl);
+          const { data, error } = await supabase.functions.invoke('create-product-payment', {
+            body: {
+              items: items.map(item => ({
+                product_id: item.productId,
+                variant_id: item.variantId || null,
+                quantity: item.quantity,
+              })),
+            },
+          });
+
+          if (error) throw error;
+          if (data?.url) {
+            window.location.href = data.url;
+          }
         } catch (error) {
           console.error('Failed to create checkout:', error);
         } finally {
@@ -86,7 +104,7 @@ export const useCartStore = create<CartStore>()(
       }
     }),
     {
-      name: 'shopify-cart',
+      name: 'product-cart',
       storage: createJSONStorage(() => localStorage),
     }
   )

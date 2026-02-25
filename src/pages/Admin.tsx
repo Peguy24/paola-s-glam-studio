@@ -17,9 +17,11 @@ import { TransformationGallery } from "@/components/admin/TransformationGallery"
 import { ContactMessages } from "@/components/admin/ContactMessages";
 import { RatingsManagement } from "@/components/admin/RatingsManagement";
 import { SiteSettings } from "@/components/admin/SiteSettings";
- import { CancellationPolicySettings } from "@/components/admin/CancellationPolicySettings";
+import { CancellationPolicySettings } from "@/components/admin/CancellationPolicySettings";
+import { ProductManagement } from "@/components/admin/ProductManagement";
+import { OrderManagement } from "@/components/admin/OrderManagement";
 import { useToast } from "@/hooks/use-toast";
- import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings, RefreshCcw } from "lucide-react";
+ import { Shield, Calendar, Clock, Users, Activity, Bell, Package, BarChart, Image, Mail, Star, Settings, RefreshCcw, ShoppingBag, ClipboardList } from "lucide-react";
  import { AdminGuideGenerator } from "@/components/admin/AdminGuideGenerator";
 
 const Admin = () => {
@@ -156,6 +158,14 @@ const Admin = () => {
                    <RefreshCcw className="h-4 w-4 mr-1.5 hidden xl:inline" />
                    Cancellation
                  </TabsTrigger>
+                 <TabsTrigger value="products" className="text-xs xl:text-sm">
+                   <ShoppingBag className="h-4 w-4 mr-1.5 hidden xl:inline" />
+                   Products
+                 </TabsTrigger>
+                 <TabsTrigger value="orders" className="text-xs xl:text-sm">
+                   <ClipboardList className="h-4 w-4 mr-1.5 hidden xl:inline" />
+                   Orders
+                 </TabsTrigger>
               </TabsList>
             </div>
 
@@ -247,6 +257,18 @@ const Admin = () => {
                          <span>Cancellation Policy</span>
                        </div>
                      </SelectItem>
+                     <SelectItem value="products">
+                       <div className="flex items-center gap-2">
+                         <ShoppingBag className="h-4 w-4" />
+                         <span>Products</span>
+                       </div>
+                     </SelectItem>
+                     <SelectItem value="orders">
+                       <div className="flex items-center gap-2">
+                         <ClipboardList className="h-4 w-4" />
+                         <span>Orders</span>
+                       </div>
+                     </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -302,6 +324,14 @@ const Admin = () => {
              <TabsContent value="cancellation">
                <CancellationPolicySettings />
              </TabsContent>
+
+            <TabsContent value="products">
+              <ProductManagement />
+            </TabsContent>
+
+            <TabsContent value="orders">
+              <OrderManagement />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
