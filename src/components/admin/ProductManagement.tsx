@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { VariantManagement } from "./VariantManagement";
 
 interface ProductForm {
   name: string;
@@ -132,7 +133,7 @@ export const ProductManagement = () => {
           <DialogTrigger asChild>
             <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Add Product</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Edit Product" : "New Product"}</DialogTitle>
             </DialogHeader>
@@ -155,6 +156,9 @@ export const ProductManagement = () => {
               <Button className="w-full" onClick={() => saveMutation.mutate()} disabled={!form.name || !form.price || uploading}>
                 {uploading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : "Save Product"}
               </Button>
+              {editingProduct && (
+                <VariantManagement productId={editingProduct.id} />
+              )}
             </div>
           </DialogContent>
         </Dialog>
